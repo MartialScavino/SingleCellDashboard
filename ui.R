@@ -5,6 +5,7 @@
 # Sourcing modules
 source("modules/Options.R")
 source("modules/FeaturePlot.R")
+source("modules/QC.R")
 
 
 head <- dashboardHeader(title = "Single cell analysis", tags$li(class = "dropdown", 
@@ -38,38 +39,6 @@ load_data <- tabItem(tabName = "load_data",
                            actionButton("filtered", span("Load Data", id = "UpdateAnimateLoad", class = ""), styleclass = "primary"))),
                      fluidRow(dataTableOutput("dataset"))
 )
-
-
-
-# QC panel
-sidebar_QC <- sidebarPanel(
-  sliderInput("mt", "Choisissez le pourcentage de gène mitochondriaux maximum",
-                                           min = 0,
-                                           max = 100,
-                                           value = 20,
-                                           step = 1),
-  uiOutput("sliderFeature"),
-  textOutput("texte"),
-  actionButton("Trim", span("Compute trimming", id="UpdateAnimateTrim", class=""), styleclass = "primary"))
-
-
-qc <- tabItem(tabName = "qc",
-              sidebarLayout(sidebarPanel = sidebar_QC, 
-                    mainPanel = mainPanel(
-                      tabsetPanel(
-                      tabPanel("Scatter", 
-                               plotOutput("scatter_QC_MT"),
-                               plotOutput("scatter_QC_Feature")
-                      ),
-                      
-                      tabPanel("Hist", 
-                               plotOutput("hist_QC_MT"),
-                               plotOutput("hist_QC_Feature"))
-                    )
-                  )
-                )
-              )
-
  
 
 preprocess <- tabItem(tabName = "preprocessing",
@@ -172,49 +141,8 @@ clustering <- tabItem(tabName = "clustering",
                       ))
 
 
-changelabel <- tabPanel("Change labels",
-                        fluidRow(
-                        box(uiOutput("SelectLabelInf50")),
-                        box(textInput("newcolumn", value = "", "Set the new column name (it can be an existing one)"),
-                            actionButton("dochangelabel", "Apply changes", styleclass = "primary"))),
-                        fluidRow(
-                          
-                          box(title = "Old label",width = 6,
-                              uiOutput("listOldLabel")),
-                          box(title = "New label", width = 6,
-                              uiOutput("listNewLabel"))
-                          
-                        )
-                        
-                        )
 
-
-removecolumn <- tabPanel("Remove column",
-                         fluidRow(
-                           box(uiOutput("colnames")),
-                               box(actionButton("doremove", "Remove column", styleclass = "primary"))
-                         ),
-                         fluidRow(dataTableOutput("headmetadata"))
-                        )
-
-
-changecolors <- tabPanel("Change colors",
-                         fluidRow(
-                           box(uiOutput("SelectLabelInf50_2"),
-                               actionButton("resetcolors", "Reset colors of selected column", styleclass = "danger")),
-                           box(actionButton("dochangecolors", "Apply changes", styleclass = "primary"))
-                           
-                           ),
-                         fluidRow(
-                           
-                           box(title = "Label",width = 6,
-                               uiOutput("listLabel")),
-                           box(title = "Color", width = 6,
-                               uiOutput("listColor"))
-                         )
-                        )
-
-
+# Donz in modules/options.R
 option <- tabItem(tabName = "options",
                   tabsetPanel(
                     changelabel,

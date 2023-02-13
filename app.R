@@ -16,6 +16,7 @@ library(cowplot)
 library(DT)
 library(babelgene)
 library(UCell)
+library(plotly)
 library(stringr)
 library(scales)
 

@@ -1,5 +1,5 @@
 featureplotsidebar <- sidebarPanel(
-  actionButton("reset", "Reset signature", styleclass = "danger"),
+  textInput("signaturename", "Signature name", value = ''),
   p(markdown('---')),
   p("Signature genes"),
   p("(Click on a button to remove it)"),
@@ -10,15 +10,16 @@ featureplotsidebar <- sidebarPanel(
 
 featureplotmain <-mainPanel(
   uiOutput("typeaheadFeature"),
+  actionButton("reset", "Reset signature", styleclass = "danger"),
   plotOutput("featuresplot"))
 
 
 ## Feature Plot
-featureplotserver <- function(input, output, session, data){
+featureplotserver <- function(input, output, session, val){
   
 output$typeaheadFeature <- renderUI({
   
-  genes <- data.frame(list(gene = rownames(data)))
+  genes <- data.frame(list(gene = rownames(val$data)))
   
   textInput.typeahead("gene", placeholder = "Enter a gene",
                       local = genes, 
@@ -91,7 +92,6 @@ observeEvent(input$myclick, {
 
 # Calcule le plot quand le bouton est sélectionné 
 observeEvent(input$dofeature,{
-  
   output$featuresplot <- renderPlot({
     
     isolate({
@@ -100,7 +100,7 @@ observeEvent(input$dofeature,{
       
       if (length(liste_gene_plot) == 1){
         
-        p <- FeaturePlot(data, features = liste_gene_plot)
+        p <- FeaturePlot(val$data, features = liste_gene_plot)
         return(p)
       }
       
@@ -109,8 +109,18 @@ observeEvent(input$dofeature,{
         addClass(id = "UpdateAnimateFeature", class = "loading dots")
         disable("dofeature")
         
-        data <- AddModuleScore_UCell(obj = data, features = list(Signature = liste_gene_plot))
-        p <- FeaturePlot(object = data, features = "Signature_UCell") + ggtitle("Signature")
+        if (input$signaturename == ""){
+          val$data <- AddModuleScore_UCell(val$data, features = list(Signature = liste_gene_plot))
+          p <- FeaturePlot(object = val$data, features = "Signature_UCell") + ggtitle("Signature")
+        }
+        
+        else{
+          name <- input$signaturename
+          val$data <- AddModuleScore_UCell(val$data ,features = list(Signature_ = liste_gene_plot), name = paste0(name, "_UCell"))
+          
+          print(names(val$data@meta.data))
+          p <- FeaturePlot(val$data, features = paste0("Signature_", name, "_UCell")) + ggtitle(input$signaturename)
+        }
         
         enable("dofeature")
         removeClass(id = "UpdateAnimateFeature", class = "loading dots")
@@ -123,4 +133,5 @@ observeEvent(input$dofeature,{
     })
   })
 })
+
 }
