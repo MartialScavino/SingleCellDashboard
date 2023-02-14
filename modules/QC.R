@@ -123,12 +123,14 @@ qcserver <- function(input, output, session, val){
   
   output$violin_QC_MT <- renderPlot({
     VlnPlot(val$data, "nFeature_RNA", group.by = input$choice_violin_QC) + 
-      geom_hline(yintercept = input$features, col = "#832681") + NoLegend()
+      geom_hline(yintercept = input$features, col = "#832681") + NoLegend() + 
+      scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_violin_QC])))
   })
   
   output$violin_QC_Features <- renderPlot({
     VlnPlot(val$data, "percent.mt", group.by = input$choice_violin_QC) + 
-      geom_hline(yintercept = input$mt, col = '#FEB078') + NoLegend()
+      geom_hline(yintercept = input$mt, col = '#FEB078') + NoLegend() + 
+      scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_violin_QC])))
     
   })
   
@@ -157,9 +159,11 @@ qcserver <- function(input, output, session, val){
   
   output$stacked_barplot <- renderPlotly({
     
-    ggplotly(ggplot(val$data@meta.data, aes(fill=.data[[input$choice_stacked_y]], 
-                                            x= .data[[input$choice_stacked_x]])) + 
-               geom_bar(position="fill"))
+    ggplotly(ggplot(val$data@meta.data, 
+                    aes(fill=.data[[input$choice_stacked_y]], 
+                        x= .data[[input$choice_stacked_x]])) + 
+               geom_bar(position="fill") + 
+      scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_stacked_y]))))
     
     
   })

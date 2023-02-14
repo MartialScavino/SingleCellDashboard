@@ -176,8 +176,8 @@ markergene <- tabItem(tabName = "markergenes",
 option <- tabItem(tabName = "options",
                   tabsetPanel(
                     changelabel,
-                    changecolors,
                     changeorder,
+                    changecolors,
                     removecolumn
                   ))
 
