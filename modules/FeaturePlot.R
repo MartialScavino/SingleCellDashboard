@@ -115,10 +115,8 @@ observeEvent(input$dofeature,{
         }
         
         else{
-          name <- input$signaturename
+          name <- sub(" ", "", input$signaturename)
           val$data <- AddModuleScore_UCell(val$data ,features = list(Signature_ = liste_gene_plot), name = paste0(name, "_UCell"))
-          
-          print(names(val$data@meta.data))
           p <- FeaturePlot(val$data, features = paste0("Signature_", name, "_UCell")) + ggtitle(input$signaturename)
         }
         

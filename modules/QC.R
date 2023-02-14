@@ -9,44 +9,37 @@ sidebar_QC <- sidebarPanel(
   textOutput("texte"),
   actionButton("Trim", span("Compute trimming", id="UpdateAnimateTrim", class=""), styleclass = "primary"))
 
-
-qc <- tabItem(tabName = "qc",
-              sidebarLayout(sidebarPanel = sidebar_QC, 
-                            mainPanel = mainPanel(
-                              tabsetPanel(
-                                tabPanel("Scatter", 
-                                         plotOutput("scatter_QC_MT"),
-                                         plotOutput("scatter_QC_Feature")
-                                ),
-                                
-                                tabPanel("Hist", 
-                                         plotOutput("hist_QC_MT"),
-                                         plotOutput("hist_QC_Feature")),
-                                
-                                tabPanel("Violin", 
-                                         uiOutput("select_violin_QC"),
-                                         plotOutput("violin_QC_MT"),
-                                         plotOutput("violin_QC_Features")),
-                                tabPanel("Stacked",
-                                         fluidRow(
-                                           uiOutput("select_stacked_1"),
-                                           uiOutput("select_stacked_2")),
-                                         fluidRow(
-                                           plotlyOutput("stacked_barplot")))
-                              )
-                            )
-              )
+scatter <- tabPanel("Scatter", 
+                    plotOutput("scatter_QC_MT"),
+                    plotOutput("scatter_QC_Feature")
 )
 
-QC <- qcserver <- function(input, output, session, val){
+hist <- tabPanel("Hist", 
+                 plotOutput("hist_QC_MT"),
+                 plotOutput("hist_QC_Feature"))
+
+violin <- tabPanel("Violin", 
+                   uiOutput("select_violin_QC"),
+                   plotOutput("violin_QC_MT"),
+                   plotOutput("violin_QC_Features"))
+
+
+stacked <- tabPanel("Stacked",
+                    fluidRow(
+                      uiOutput("select_stacked_1"),
+                      uiOutput("select_stacked_2")),
+                    fluidRow(
+                      plotlyOutput("stacked_barplot")))
+
+qcserver <- function(input, output, session, val){
   
   
   # Slider featre slide bar
   output$sliderFeature <- renderUI(sliderInput("features",
                                                "Number of features",
-                                               min = 0,
+                                               min = min(val$data$nFeature_RNA),
                                                max = max(val$data$nFeature_RNA),
-                                               value = c(600, max(val$data$nFeature_RNA)), 
+                                               value = c(min(val$data$nFeature_RNA), max(val$data$nFeature_RNA)), 
                                                step = 50))
   
   # Number of cell removed text
@@ -58,6 +51,19 @@ QC <- qcserver <- function(input, output, session, val){
     nb_cell_tot <- length(rownames(val$data@meta.data))
     
     paste0("Removing ", nb_cell_bad, " cells from the dataset (", round(100*nb_cell_bad/nb_cell_tot, 2), "% of total cells)")
+    
+  })
+  
+  observeEvent(input$Trim, {
+    
+    addClass(id = "UpdateAnimateTrim", class = "loading dots")
+    disable("Trim")
+    
+    val$data <- subset(val$data,
+                       subset = nFeature_RNA > input$features[1] & nFeature_RNA < input$features[2] & percent.mt < input$mt)
+    
+    enable("Trim")
+    removeClass(id = "UpdateAnimateTrim", class = "loading dots")
     
   })
   

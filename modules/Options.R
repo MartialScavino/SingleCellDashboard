@@ -1,4 +1,4 @@
-options(shiny.maxRequestSize = 100*1024^2)
+options(shiny.maxRequestSize = 100*2048^2)
 
 Animation <- tags$head(tags$style(type="text/css", '
             .loading {
@@ -74,8 +74,20 @@ changecolors <- tabPanel("Change colors",
                                uiOutput("listLabel")),
                            box(title = "Color", width = 6,
                                uiOutput("listColor"))
-                         )
-)
+                         ))
+
+
+changeorder <- tabPanel("Change order",
+                        fluidRow(
+                          box(uiOutput("SelectLabelInf50_3")),
+                          box(actionButton("dochangeorder", "Apply changes", styleclass = "primary"))
+                        ),
+                        fluidRow(
+                          box(title = "Label", width = 6,
+                              uiOutput("listLabelOrder")),
+                          box(title = "Order", width = 6,
+                              uiOutput("listOrder"))
+                        ))
 
 
 ## SERVER
@@ -254,10 +266,76 @@ optionsserver <- function(input, output, session, val){
     )
   })
   
+ 
+  output$SelectLabelInf50_3 <- renderUI({
+    keep <- c()
+    for (i in names(val$data@meta.data)){
+      if (length(table(val$data@meta.data[,i])) < 50)
+        keep <- append(keep, i)
+    }
+    selectInput("selectchangeorder", "Select a variable", choices = keep, selected = input$selectchangeorder)
+    
+  })
   
+  
+  observeEvent(input$selectchangeorder, {
+    output$listLabelOrder <- renderUI({
+      
+      tagList(
+        lapply(1:length(table(val$data@meta.data[,input$selectchangeorder])), 
+               function(i){
+                 
+                 id <- paste0('LabelOrder_', i)
+                 disabled(
+                   textInput(id, "", value = names(table(val$data@meta.data[,input$selectchangeorder]))[i])
+                 )
+                 
+               })
+      )
+    })
+    
+    
+    output$listOrder <- renderUI({
+      
+      tagList(
+        lapply(1:length(table(val$data@meta.data[,input$selectchangeorder])), 
+               function(i){
+                 
+                 id <- paste0('Order_', i)
+                 textInput(id, "", 
+                           value = which(names(table(val$data@meta.data[,input$selectchangeorder])) == names(table(val$data@meta.data[,input$selectchangeorder]))[i]))
+                 
+               })
+      )
+    })
+    
+  })
+  
+  
+  ## Faire les 3 boutons 
+  
+  observeEvent(input$dochangeorder, {
+    
+    df <- data.frame(list(label = "", order = ""))
+    
+    for (i in 1:length(names(table(val$data@meta.data[,input$selectchangeorder])))){
+      
+      id_labelorder <- paste0('LabelOrder_', i)
+      id_order <- paste0("Order_", i)
+      
+      df[i,] <- c(input[[id_labelorder]], input[[id_order]])
+      
+    }
+    
+    print("Avant arrange")
+    print(df)
+    df <- df %>% arrange(order)
+    levels_test <- as.vector(df$label)
+    
+    val$data@meta.data[,input$selectchangeorder] <- factor(val$data@meta.data[,input$selectchangeorder], levels = levels_test)
+    
+  })
+  
+  
+   
 }
-
-
-
-
-

@@ -1,7 +1,8 @@
 server <- function(input, output, session) {
   
   # Reactive value for dataset
-  val <- reactiveValues(colors = list())
+  val <- reactiveValues(colors = list(), 
+                        markers = data.frame(list()))
   
   # Loading dataset
   observeEvent(input$data,{
@@ -25,6 +26,7 @@ server <- function(input, output, session) {
                                                      buttons = c('copy', 'csv', 'excel')))
     })
  
+  # Load data with 10X files
   observeEvent(input$filtered, {
 
     addClass(id = "UpdateAnimateLoad", class = "loading dots")
@@ -53,24 +55,12 @@ server <- function(input, output, session) {
   
   
   # QC
+  ## Done in modules/QC.R
+  ## Plots and inputs to trim data
   qcserver(input, output, session, val)
   
   
-  
-  observeEvent(input$Trim, {
-    
-    addClass(id = "UpdateAnimateTrim", class = "loading dots")
-    disable("Trim")
-    
-    val$data <- subset(val$data,
-                       subset = nFeature_RNA > input$features[1] & nFeature_RNA < input$features[2] & percent.mt < input$mt)
-    
-    enable("Trim")
-    removeClass(id = "UpdateAnimateTrim", class = "loading dots")
-    
-  })
-  
-  
+  # Preprocessing
   observeEvent(input$LaunchPreprocessing, {
     
     addClass(id = "UpdateAnimatePreprocessing", class = "loading dots")
@@ -125,6 +115,8 @@ server <- function(input, output, session) {
     })
   
   
+  # Dimension reduction
+  ## PCA
   output$groupbypca <- renderUI(selectInput("groupbypca", "group cells by",
                                          choices = names(val$data@meta.data)))
   
@@ -164,11 +156,13 @@ server <- function(input, output, session) {
   output$dimheatmap <- renderPlot({
     if (!("pca" %in% names(val$data@reductions)))
       return(0)
-    DimHeatmap(val$data, dims = 1:input$ndimheatmap, balanced = TRUE, nfeatures = 20)
+    
+    DimHeatmap(val$data, dims =  input$ndimheatmap, balanced = TRUE, nfeatures = 20)
     })
   
   
   
+  ## UMAP
   output$groupbyumap <- renderUI(selectInput("groupbyumap", "group cells by",
                                              choices = names(val$data@meta.data)))
   
@@ -196,6 +190,8 @@ server <- function(input, output, session) {
     
   })
   
+  
+  ## Clustering
   output$groupbycluster <- renderUI(selectInput("groupbycluster", "group cells by",
                                              choices = names(val$data@meta.data),
                                              selected = "seurat_clusters"))
@@ -227,6 +223,8 @@ server <- function(input, output, session) {
       DimPlot(val$data, reduction = "umap", group.by = input$groupbycluster)
   })
   
+  
+  # Button to export data as rds
   output$savedata <- downloadHandler(
     filename = "seurat_object.rds",
     content = function(file) {
@@ -247,7 +245,13 @@ server <- function(input, output, session) {
   
   
   ## Options
+  # Done in mdoules/Options.R
   optionsserver(input, output, session, val)
+  
+  
+  ## Markers by ident
+  # Done in modules/AllMarkers.R
+  allmarkersserver(input, output, session, val)
   
 }
 

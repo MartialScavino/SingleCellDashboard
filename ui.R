@@ -6,6 +6,7 @@
 source("modules/Options.R")
 source("modules/FeaturePlot.R")
 source("modules/QC.R")
+source("modules/AllMarkers.R")
 
 
 head <- dashboardHeader(title = "Single cell analysis", tags$li(class = "dropdown", 
@@ -20,8 +21,9 @@ side <- dashboardSidebar(
              menuSubItem("PCA", tabName = "pca"),
              menuSubItem("UMAP", tabName = "umap")),
     menuItem("Clustering", tabName = "clustering"),
-    menuItem("Options", tabName = "options", icon = icon("cog")),
-    menuItem("FeaturePlot", tabName = "featureplot")
+    menuItem("FeaturePlot", tabName = "featureplot"),
+    menuItem("Marker genes", tabName = "markergenes"),
+    menuItem("Options", tabName = "options", icon = icon("cog"))
 
   )
 )
@@ -30,7 +32,7 @@ side <- dashboardSidebar(
 load_data <- tabItem(tabName = "load_data",
                      fluidRow(
                        
-                       box(title = "RDS", fileInput(inputId = "data", label = "Select the path to your Rds", accept = "")),
+                       box(title = "RDS", fileInput(inputId = "data", label = "Enter a RDS file", accept = "")),
                        
                        box(title = "filtered_feature_bc_matrix", 
                            fileInput(inputId = "barcodesfile", "barcodes.tsv.gz"),
@@ -40,6 +42,21 @@ load_data <- tabItem(tabName = "load_data",
                      fluidRow(dataTableOutput("dataset"))
 )
  
+## Done in modules/QC.R
+qc <- tabItem(tabName = "qc",
+              sidebarLayout(sidebarPanel = sidebar_QC, 
+                            mainPanel = mainPanel(
+                              tabsetPanel(
+                                scatter,
+                                hist,
+                                violin,
+                                stacked
+                              )
+                            )
+              )
+)
+
+
 
 preprocess <- tabItem(tabName = "preprocessing",
                       sidebarLayout(
@@ -97,7 +114,7 @@ pca <- tabItem(tabName = "pca",
             
               tabPanel("DimHeatmap",
             sliderInput("ndimheatmap", "Number of dimension to plot",
-                        10, 30, 15, 5),
+                        1, 50, 1, 1),
             plotOutput("dimheatmap"))
             )
           )
@@ -140,14 +157,28 @@ clustering <- tabItem(tabName = "clustering",
                         )
                       ))
 
+markergene <- tabItem(tabName = "markergenes", 
+                      sidebarLayout(
+                        sidebarPanel = sidebarAllMarkers,
+                        mainPanel = mainPanel(
+                          tabsetPanel(
+                            markers,
+                            heatmap,
+                            dotplot,
+                            volcano
+                          )
+                        )
+                      )
+                    )
 
 
-# Donz in modules/options.R
+# Done in modules/options.R
 option <- tabItem(tabName = "options",
                   tabsetPanel(
                     changelabel,
-                    removecolumn,
-                    changecolors
+                    changecolors,
+                    changeorder,
+                    removecolumn
                   ))
 
 featureplot <- tabItem(tabName = "featureplot", 
@@ -169,8 +200,9 @@ bod <- dashboardBody(
     pca,
     umap,
     clustering,
-    option,
-    featureplot
+    markergene,
+    featureplot,
+    option
   )
 )
 
