@@ -2,12 +2,13 @@ server <- function(input, output, session) {
   
   # Reactive value for dataset
   val <- reactiveValues(colors = list(), 
-                        markers = data.frame(list()))
+                        markers = data.frame(list()),
+                        degs = data.frame())
   
   # Loading dataset
   observeEvent(input$data,{
     # Check for file type
-    if (input$data$type != "" & !(str_sub(input$data$name,-3,-1) == "rds")){ 
+    if (file_ext(input$data$datapath) != "rds"){ 
       alert("Enter a rds file")
       return(0)
     }
@@ -252,6 +253,10 @@ server <- function(input, output, session) {
   ## Markers by ident
   # Done in modules/AllMarkers.R
   allmarkersserver(input, output, session, val)
+ 
   
+  ## Markers between 2 idents
+  # Done in modules/DifferentialExpression.R
+  degserver(input, output, session, val)
+   
 }
-

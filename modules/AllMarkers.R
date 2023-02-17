@@ -15,10 +15,7 @@ sidebarAllMarkers <- sidebarPanel(
   actionButton("dofindallmarkers", span("Compute", id = "UpdateAnimateAllMarkers", class=""), styleclass = "primary"),
   hr(),
   p(markdown("**Import marker table**")),
-  fileInput("importtablemarkers", label = "Enter a .csv file", accept = ".csv"),
-  hr(),
-  p(markdown("**Export marker table**")),
-  downloadButton("exporttablemarkers", span("Export", id = "UpdateAnimateSaveMarkers", class = ""))
+  fileInput("importtablemarkers", label = "Enter a .csv or a excel file", accept = ".csv")
 )
 
 
@@ -29,7 +26,9 @@ heatmap <- tabPanel("Heatmap",
                     plotOutput("HeatmapAllMarkers"))
 dotplot <- tabPanel("Dot plot",
                     plotOutput("DotplotAllMarkers"))
-volcano <- tabPanel("Volcano plot")
+volcano <- tabPanel("Volcano plot",
+                    uiOutput("selectVolcanoPlotAllMarkers"),
+                    plotlyOutput("VolcanoPlotAllMarkers"))
 
 
 
@@ -99,5 +98,54 @@ allmarkersserver <- function(input, output, session, val){
     
   })
   
+  # Select Input pour le volcano plot
+  output$selectVolcanoPlotAllMarkers <- renderUI(
+    selectInput("choiceVolcanoPlotAllMarkers", "Choose a variable",
+                choices = names(table(val$data@meta.data[,input$identallmarkers])))
+  )
   
+  output$VolcanoPlotAllMarkers <- renderPlotly({
+    
+    subdf <- val$markers[which(val$markers$cluster == input$choiceVolcanoPlotAllMarkers),]
+    subdf_up <- subdf[which(subdf$avg_log2FC > input$LogFCThreshold),]
+    subdf_down <- subdf[which(subdf$avg_log2FC < -input$LogFCThreshold),]
+    # subdf_notde <- subdf[which(subdf$avg_log2FC > -input$LogFCThreshold & 
+    #                              subdf$avg_log2FC < input$LogFCThreshold),]
+    
+    top10up <- subdf_up %>% slice_max(n = 10, order_by = avg_log2FC)
+    top10down <- subdf_down %>% slice_max(n = 10, order_by = -avg_log2FC)
+    
+    ggplotly(
+      ggplot(subdf, aes(x = avg_log2FC, y = -log10(p_val_adj))) +
+        geom_point(data = subdf_up, color = "red") + 
+        geom_point(data = subdf_down, color = "blue") + 
+        geom_text(data = top10up, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene), nudge_y = 5) +
+        geom_text(data = top10down, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene), nudge_y = 5) + theme_light()
+      
+    )
+    
+  })
+  
+  
+  observeEvent(input$importtablemarkers, {
+    
+    if (file_ext(input$importtablemarkers$datapath) == "xlsx")
+      val$markers <- readxl::read_xlsx(input$importtablemarkers$datapath, col_names = T)
+    
+    else if (file_ext(input$importtablemarkers$datapath) == "csv")
+      val$markers <- read.csv(input$importtablemarkers$datapath, header = T, sep = ',', row.names = 1)
+    
+    else{
+      alert("Please enter a csv or a xlsx file")
+      return(0)
+    }
+      
+  })
+  
+
 }
+
+
+# testdf <- FindMarkers(test, ident.1 = 1, group.by = "seurat_clusters", logfc.threshold = 2, min.diff.pct = 0.1)
+# testdf$avg_log2FC
+# testdf$pct.2 - testdf$pct.1

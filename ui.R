@@ -7,6 +7,7 @@ source("modules/Options.R")
 source("modules/FeaturePlot.R")
 source("modules/QC.R")
 source("modules/AllMarkers.R")
+source("modules/DifferentialExpression.R")
 
 
 head <- dashboardHeader(title = "Single cell analysis", tags$li(class = "dropdown", 
@@ -23,6 +24,7 @@ side <- dashboardSidebar(
     menuItem("Clustering", tabName = "clustering"),
     menuItem("FeaturePlot", tabName = "featureplot"),
     menuItem("Marker genes", tabName = "markergenes"),
+    menuItem("Differential expression analysis", tabName = "deg"),
     menuItem("Options", tabName = "options", icon = icon("cog"))
 
   )
@@ -172,6 +174,18 @@ markergene <- tabItem(tabName = "markergenes",
                     )
 
 
+degs <- tabItem(tabName = "deg",
+                sidebarLayout(
+                  sidebarPanel = sidebarDEG,
+                  mainPanel = mainPanel(
+                    tabsetPanel(
+                      degtable,
+                      volcanodeg
+                    )
+                  )
+                ))
+
+
 # Done in modules/options.R
 option <- tabItem(tabName = "options",
                   tabsetPanel(
@@ -201,6 +215,7 @@ bod <- dashboardBody(
     umap,
     clustering,
     markergene,
+    degs,
     featureplot,
     option
   )

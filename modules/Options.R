@@ -317,6 +317,7 @@ optionsserver <- function(input, output, session, val){
   observeEvent(input$dochangeorder, {
     
     df <- data.frame(list(label = "", order = ""))
+    df_colors <- data.frame(list(color = '', order = ''))
     
     for (i in 1:length(names(table(val$data@meta.data[,input$selectchangeorder])))){
       
@@ -324,15 +325,19 @@ optionsserver <- function(input, output, session, val){
       id_order <- paste0("Order_", i)
       
       df[i,] <- c(input[[id_labelorder]], input[[id_order]])
+      df_colors[i,] <- c(val$colors[[input$selectchangeorder]][i], input[[id_order]])
       
     }
     
-    print("Avant arrange")
-    print(df)
     df <- df %>% arrange(order)
+    df_colors <- df_colors %>% arrange(order)
+    
     levels_test <- as.vector(df$label)
     
     val$data@meta.data[,input$selectchangeorder] <- factor(val$data@meta.data[,input$selectchangeorder], levels = levels_test)
+    
+    if (all(val$colors[[input$selectchangeorder]] != hue_pal()(length(names(table(val$data@meta.data[, input$selectchangeorder]))))))
+      val$colors[[input$selectchangeorder]] <- as.vector(df_colors$color)
     
   })
   

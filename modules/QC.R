@@ -163,7 +163,7 @@ qcserver <- function(input, output, session, val){
                     aes(fill=.data[[input$choice_stacked_y]], 
                         x= .data[[input$choice_stacked_x]])) + 
                geom_bar(position="fill") + 
-      scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_stacked_y]))))
+      scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_stacked_y]))) + theme_light())
     
     
   })
