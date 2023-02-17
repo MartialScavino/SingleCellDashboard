@@ -8,17 +8,17 @@ if (!require("shinysky")) devtools::install_github("AnalytixWare/ShinySky")
 if (!requireNamespace("BiocManager", quietly=TRUE))
   install.packages("BiocManager")
 
-if (require("UCell"))
-  BiocManager::install("UCell", force = T, update = F)
-
 pacman::p_load(char = packages)
+df <- installed.packages()
+
+if (!"UCell" %in% rownames(df))
+  BiocManager::install("UCell", force = T, update = F)
 
 library(shinysky)
 library(dplyr)
 library(tools)
 library(UCell)
 
-df <- installed.packages()
 poubelle <- sapply(c(packages, "UCell", "shinysky", "dplyr", "tools"), function(x){
   
   if (!x %in% rownames(df)){

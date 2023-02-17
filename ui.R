@@ -22,7 +22,9 @@ side <- dashboardSidebar(
              menuSubItem("PCA", tabName = "pca"),
              menuSubItem("UMAP", tabName = "umap")),
     menuItem("Clustering", tabName = "clustering"),
-    menuItem("FeaturePlot", tabName = "featureplot"),
+    menuItem("Feature expression", tabName = "featureexpression",
+             menuSubItem("Single gene", tabName = "singlegene"),
+             menuSubItem("Signature", tabName = "signature")),
     menuItem("Marker genes", tabName = "markergenes"),
     menuItem("Differential expression analysis", tabName = "deg"),
     menuItem("Options", tabName = "options", icon = icon("cog"))
@@ -195,10 +197,18 @@ option <- tabItem(tabName = "options",
                     removecolumn
                   ))
 
-featureplot <- tabItem(tabName = "featureplot", 
-                       ## Done in modules/FeaturePlot.R
-                       featureplotsidebar, 
-                       featureplotmain)
+
+single_gene <- tabItem(tabName = "singlegene",
+                     sidebarLayout(
+                       sidebarPanel = singlegenesidebar,
+                       mainPanel = singlegenemainpanel
+                     ))
+signature <- tabItem(tabName = "signature", 
+                     sidebarLayout(
+                       sidebarPanel = signaturesidebar,
+                       mainPanel = signaturemainpanel
+                     ))
+
 
 bod <- dashboardBody(
   #chooseSliderSkin(skin = "Shiny"),
@@ -216,7 +226,8 @@ bod <- dashboardBody(
     clustering,
     markergene,
     degs,
-    featureplot,
+    single_gene,
+    signature,
     option
   )
 )
