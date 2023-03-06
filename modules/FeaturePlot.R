@@ -19,23 +19,6 @@ signaturemainpanel <- mainPanel(plotOutput("featureplotsignature"),
                                 plotOutput("violinsignature"))
 
 
-
-
-featureplotsidebar <- sidebarPanel(
-  p(markdown('---')),
-  p("Signature genes"),
-  p("(Click on a button to remove it)"),
-  uiOutput("list_button"),
-  p(markdown('---')),
-  p(HTML("<br><br><br>")),
-  actionButton('dofeature', span('Compute plot', id="UpdateAnimateFeature", class=""), styleclass = "primary"))
-
-featureplotmain <-mainPanel(
-  uiOutput("typeaheadFeature"),
-  actionButton("reset", "Reset signature", styleclass = "danger"),
-  plotOutput("featuresplot"))
-
-
 ## Feature Plot
 featureplotserver <- function(input, output, session, val){
   
@@ -110,6 +93,12 @@ output$genenotpresent <- renderText({
 
 # Calcule le plot quand le bouton est sélectionné 
 observeEvent(input$dosignatureplot,{
+  
+  if (input$signaturelist == ""){
+    alert("Please enter a list of gene")
+    return(0)
+  }
+  
   addClass(id = "UpdateAnimateFeature", class = "loading dots")
   disable("dosignatureplot")
   
@@ -151,6 +140,22 @@ observeEvent(input$dosignatureplot,{
   removeClass(id = "UpdateAnimateFeature", class = "loading dots")
   
 })
+
+}
+
+# featureplotsidebar <- sidebarPanel(
+#   p(markdown('---')),
+#   p("Signature genes"),
+#   p("(Click on a button to remove it)"),
+#   uiOutput("list_button"),
+#   p(markdown('---')),
+#   p(HTML("<br><br><br>")),
+#   actionButton('dofeature', span('Compute plot', id="UpdateAnimateFeature", class=""), styleclass = "primary"))
+# 
+# featureplotmain <-mainPanel(
+#   uiOutput("typeaheadFeature"),
+#   actionButton("reset", "Reset signature", styleclass = "danger"),
+#   plotOutput("featuresplot"))
 
 
 
@@ -255,5 +260,3 @@ observeEvent(input$dosignatureplot,{
 # #     })
 # #   })
 # # })
-
-}

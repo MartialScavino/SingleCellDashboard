@@ -8,7 +8,8 @@ source("modules/FeaturePlot.R")
 source("modules/QC.R")
 source("modules/AllMarkers.R")
 source("modules/DifferentialExpression.R")
-
+source("modules/Enrichment.R")
+source("modules/Visualisation.R")
 
 head <- dashboardHeader(title = "Single cell analysis", tags$li(class = "dropdown", 
                                                                 downloadButton("savedata", span("Save data", id = "UpdateAnimateSave", class = ""))))
@@ -27,6 +28,8 @@ side <- dashboardSidebar(
              menuSubItem("Signature", tabName = "signature")),
     menuItem("Marker genes", tabName = "markergenes"),
     menuItem("Differential expression analysis", tabName = "deg"),
+    menuItem("Enrichment analysis", tabName = "enrichment"),
+    menuItem("Visualisation", tabName = "visualisation"),
     menuItem("Options", tabName = "options", icon = icon("cog"))
 
   )
@@ -209,6 +212,19 @@ signature <- tabItem(tabName = "signature",
                        mainPanel = signaturemainpanel
                      ))
 
+enrichment <- tabItem(tabName = "enrichment",
+                      sidebarLayout(
+                        sidebarPanel = enrichmentsidebar,
+                        mainPanel = enrichmentmainpanel
+                      ))
+
+
+visualisation <- tabItem(tabName = "visualisation",
+                         sidebarLayout(
+                           sidebarPanel = visualisationsidebar,
+                           mainPanel = visualisationmainpanel
+                         ))
+
 
 bod <- dashboardBody(
   #chooseSliderSkin(skin = "Shiny"),
@@ -228,6 +244,8 @@ bod <- dashboardBody(
     degs,
     single_gene,
     signature,
+    enrichment,
+    visualisation,
     option
   )
 )

@@ -218,10 +218,11 @@ server <- function(input, output, session) {
     
   output$UMAPCluster <- renderPlot({
     if(length(table(val$data@meta.data[,input$groupbycluster])) > 50)
-      FeaturePlot(val$data, reduction = "umap", features = input$groupbycluster)
+      FeaturePlot(val$data, reduction = "umap", features = input$groupbycluster) 
     
     else
-      DimPlot(val$data, reduction = "umap", group.by = input$groupbycluster)
+      DimPlot(val$data, reduction = "umap", group.by = input$groupbycluster) + 
+      scale_color_manual(values = val$colors[[input$groupbycluster]])
   })
   
   
@@ -253,10 +254,19 @@ server <- function(input, output, session) {
   ## Markers by ident
   # Done in modules/AllMarkers.R
   allmarkersserver(input, output, session, val)
- 
+  
   
   ## Markers between 2 idents
   # Done in modules/DifferentialExpression.R
   degserver(input, output, session, val)
+  
+  ## Enrichment analysis
+  # Done in modules/Enrichment.R
+  enrichmentserver(input, output, session, val)
+  
+  
+  ## Make your own plot
+  # Done in modules/Visualisation.R
+  visualisationserver(input, output, session, val)
    
 }
