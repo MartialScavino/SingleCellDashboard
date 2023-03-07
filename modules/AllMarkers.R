@@ -144,8 +144,3 @@ allmarkersserver <- function(input, output, session, val){
   
 
 }
-
-
-# testdf <- FindMarkers(test, ident.1 = 1, group.by = "seurat_clusters", logfc.threshold = 2, min.diff.pct = 0.1)
-# testdf$avg_log2FC
-# testdf$pct.2 - testdf$pct.1

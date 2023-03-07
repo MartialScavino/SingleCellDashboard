@@ -1,6 +1,6 @@
 visualisationsidebar <- sidebarPanel(
   selectInput("plottype", "Plot", 
-              choices = c("Cell projection", "Violin", "Stacked Barchart")),
+              choices = c("Cell projection", "Violin Plot", "Stacked Barchart")),
   hr(),
   uiOutput("visualisation_listoption"),
   hr(),
@@ -18,9 +18,12 @@ visualisationmainpanel <- mainPanel(
 visualisationserver <- function(input, output, session, val){
   output$visualisation_listoption <- renderUI({
     keep <- c()
+    notkeep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
-        keep <- append(keep, i)}
+        keep <- append(keep, i)
+      else
+        notkeep <- append(notkeep, i)}
     
     switch(input$plottype,
            
@@ -33,8 +36,18 @@ visualisationserver <- function(input, output, session, val){
              checkboxInput("labelclustercellproj", "Labels on cells", F),
              checkboxInput("repelcellproj", "Repel labels", F),
              checkboxInput("shufflecellproj", "Shuffle cells", F)
-             )
+             ),
            
+           "Violin Plot" = tagList(
+             selectInput("xviolinvisu", "X axis", keep, selected = input$xviolinvisu),
+             selectInput("yviolinvisu", "Y axis", notkeep, selected = input$yviolinvisu)
+           ),
+           
+           "Stacked Barchart" = tagList(
+             selectInput("xbarvisu", "X axis", keep, selected = input$xbarvisu),
+             selectInput("ybarvisu", "Y axis", keep, selected = input$ybarvisu),
+             checkboxInput("capbar", "Normalize bars", input$capbar)
+           )
            
       )
     
@@ -59,7 +72,30 @@ visualisationserver <- function(input, output, session, val){
                        label.size = input$labelsizecellproj, label = input$labelclustercellproj,
                        shuffle = input$shufflecellproj, repel = input$repelcellproj) + 
                        scale_color_manual(values = val$colors[[input$groupbycellproj]])
-             }
+             },
+           
+           "Violin Plot" = {
+             VlnPlot(val$data, features = input$yviolinvisu, group.by = input$xviolinvisu) + 
+               scale_fill_manual(values = as.vector(unlist(val$colors[input$xviolinvisu])))
+             },
+           
+           
+           "Stacked Barchart" = {
+             if (input$capbar)
+               ggplot(val$data@meta.data, 
+                      aes(fill=.data[[input$ybarvisu]], x= .data[[input$xbarvisu]])) + 
+               geom_bar(position="fill") + 
+               scale_fill_manual(values = as.vector(unlist(val$colors[input$ybarvisu]))) + 
+               theme_light()
+               
+             else
+               ggplot(val$data@meta.data, 
+                      aes(fill=.data[[input$ybarvisu]], x= .data[[input$xbarvisu]])) + 
+               geom_bar(position="stack") + 
+               scale_fill_manual(values = as.vector(unlist(val$colors[input$ybarvisu]))) + 
+               theme_light()
+               
+           }
            
            
            )

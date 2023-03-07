@@ -2,6 +2,11 @@ sidebarDEG <- sidebarPanel(
   uiOutput("selectidentdeg"),
   uiOutput("selectident1deg"),
   uiOutput("selectident2deg"),
+  hr(),
+  p(markdown("#### Subset")),
+  uiOutput("selectgroupbyDE"),
+  uiOutput("selectsubsetident"),
+  hr(),
   selectInput("TestToUseDEG", "Test to use", 
               choices = c("Wilcoxon" = "wilcox", "Likelihood Ratio" = "bimod", "ROC" = "roc",
                           "T test" = "t", "Negative Binomial" = "negbinom",
@@ -19,6 +24,7 @@ sidebarDEG <- sidebarPanel(
 
 
 degtable <- tabPanel("DEGs",
+                     uiOutput("copygenes"),
                      dataTableOutput("DEGs"))
 
 volcanodeg <- tabPanel("Volcano plot",
@@ -44,6 +50,22 @@ degserver <- function(input, output, session, val){
                                                  choices = c("All others", names(table(val$data@meta.data[,input$choiceidentdeg]))),
                                                  selected = input$ident2deg))
   
+  output$selectgroupbyDE <- renderUI({
+    keep <- c()
+    for (i in names(val$data@meta.data)){
+      if (length(table(val$data@meta.data[,i])) < 50)
+        keep <- append(keep, i)
+    }
+    selectInput("choiceidentsubset", "Select a group to subset", choices = c("None", keep), selected = input$choiceidentsubset)
+  })
+  
+  output$selectsubsetident <- renderUI({
+    if (input$choiceidentsubset != 'None')
+      selectInput("subsetident", "Choose the cells to keep", choices = names(table(val$data@meta.data[,input$choiceidentsubset])))
+    
+  })
+  
+  
   observeEvent(input$dofindDEG,{
     
     addClass(id = "UpdateAnimateDEG", class = "loading dots")
@@ -52,15 +74,39 @@ degserver <- function(input, output, session, val){
     Idents(val$data) <- input$choiceidentdeg
     
     if (input$ident2deg == "All others"){
+      if (input$choiceidentsubset == "None"){
       val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
                                     min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
                                     only.pos = input$OnlyPosDEG, ident.1 = input$ident1deg)
+      }
+      
+      else{
+        Idents(val$data) <- input$choiceidentsubset
+        val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
+                                min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
+                                only.pos = input$OnlyPosDEG, subset.ident = input$subsetident,
+                                group.by = input$choiceidentdeg, ident.1 = input$ident1deg)
+      }
+      
     }
     
     else{
+      if (input$choiceidentsubset == "None"){
       val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
                                  min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
                                  only.pos = input$OnlyPosDEG, ident.1 = input$ident1deg, ident.2 = input$indent2deg)
+      }
+      
+      else{
+        
+        Idents(val$data) <- input$choiceidentsubset
+        val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
+                                min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
+                                only.pos = input$OnlyPosDEG, subset.ident = input$subsetident,
+                                group.by = input$choiceidentdeg, ident.1 = input$ident1deg, ident.2 = input$indent2deg)
+        
+      }
+      
     }
     
     val$degs <- val$degs[which(val$degs$p_val_adj < input$PValueThreshold),]
@@ -73,7 +119,15 @@ degserver <- function(input, output, session, val){
   
   output$DEGs <- renderDataTable(val$degs, extensions = 'Buttons', 
                                                 options = list(dom = 'Bfrtip', fixedColumns = TRUE,
-                                                               buttons = c('copy', 'csv', 'excel')))
+                                                               buttons = c('csv', 'excel')))
+  
+  output$copygenes <- renderUI({
+    if (length(val$degs) != 0)
+      rclipButton("copybtm", "Copy all genes", 
+                  paste(rownames(val$degs), collapse = "\n"), modal = T, styleclass = "primary", icon = icon("clipboard"))
+    
+  })
+  
   
   output$VolcanoDEGS <- renderPlotly({
     
@@ -96,3 +150,8 @@ degserver <- function(input, output, session, val){
   
 }
 
+#test <- readRDS("../../Downloads/test_tissue.rds")
+#head(test)
+#Idents(test)
+## je veux séparer les cellules du cluster 1 entre ADK et AT
+#FindMarkers(test, ident.1 = "ADK", ident.2 = "AT", subset.ident = 1, group.by = "tissue")

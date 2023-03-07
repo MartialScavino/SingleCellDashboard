@@ -1,7 +1,7 @@
 if (!require("pacman")) install.packages("pacman")
 
 packages <- c("shinydashboard", "shiny", "shinyWidgets", "shinyjs", "shinyFiles", "shinyBS", "Seurat",
-              "ggplot2", "viridis", "cowplot", "DT", "babelgene", "plotly", "stringr", "scales", "tidyverse", "enrichR")
+              "ggplot2", "viridis", "cowplot", "DT", "babelgene", "plotly", "stringr", "scales", "tidyverse", "enrichR", "rclipboard")
 
 if (!require("shinysky")) devtools::install_github("AnalytixWare/ShinySky")
 

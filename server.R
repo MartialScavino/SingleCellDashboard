@@ -3,7 +3,8 @@ server <- function(input, output, session) {
   # Reactive value for dataset
   val <- reactiveValues(colors = list(), 
                         markers = data.frame(list()),
-                        degs = data.frame())
+                        degs = data.frame(),
+                        enrichment = data.frame())
   
   # Loading dataset
   observeEvent(input$data,{

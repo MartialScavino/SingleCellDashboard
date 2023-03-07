@@ -229,7 +229,8 @@ visualisation <- tabItem(tabName = "visualisation",
 bod <- dashboardBody(
   #chooseSliderSkin(skin = "Shiny"),
   #setSliderColor(color = c("#FEB078", "#832681"),sliderId =  c(1, 2)),
-  useShinyjs(), 
+  useShinyjs(),
+  rclipboardSetup(),
   
   ## Done in modules/Options.R
   Animation,
