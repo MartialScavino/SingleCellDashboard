@@ -75,9 +75,9 @@ degserver <- function(input, output, session, val){
     
     if (input$ident2deg == "All others"){
       if (input$choiceidentsubset == "None"){
-      val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
+      val$degs <- FindMarkers(object = val$data, logfc.threshold = input$LogFCThresholdDEG,
                                     min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
-                                    only.pos = input$OnlyPosDEG, ident.1 = input$ident1deg)
+                                    only.pos = input$OnlyPosDEG, ident.1 = input$ident1deg, assay = "RNA")
       }
       
       else{
@@ -85,7 +85,7 @@ degserver <- function(input, output, session, val){
         val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
                                 min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
                                 only.pos = input$OnlyPosDEG, subset.ident = input$subsetident,
-                                group.by = input$choiceidentdeg, ident.1 = input$ident1deg)
+                                group.by = input$choiceidentdeg, ident.1 = input$ident1deg, assay = "RNA")
       }
       
     }
@@ -94,7 +94,7 @@ degserver <- function(input, output, session, val){
       if (input$choiceidentsubset == "None"){
       val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
                                  min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
-                                 only.pos = input$OnlyPosDEG, ident.1 = input$ident1deg, ident.2 = input$indent2deg)
+                                 only.pos = input$OnlyPosDEG, ident.1 = input$ident1deg, ident.2 = input$indent2deg, assay = "RNA")
       }
       
       else{
@@ -103,7 +103,7 @@ degserver <- function(input, output, session, val){
         val$degs <- FindMarkers(val$data, logfc.threshold = input$LogFCThresholdDEG,
                                 min.pct = input$MinimumPercentDEG, test.use = input$TestToUseDEG,
                                 only.pos = input$OnlyPosDEG, subset.ident = input$subsetident,
-                                group.by = input$choiceidentdeg, ident.1 = input$ident1deg, ident.2 = input$indent2deg)
+                                group.by = input$choiceidentdeg, ident.1 = input$ident1deg, ident.2 = input$indent2deg, assay = "RNA")
         
       }
       
@@ -117,7 +117,7 @@ degserver <- function(input, output, session, val){
     
   })
   
-  output$DEGs <- renderDataTable(val$degs, extensions = 'Buttons', 
+  output$DEGs <- renderDataTable(val$degs, extensions = 'Buttons', server = F,
                                                 options = list(dom = 'Bfrtip', fixedColumns = TRUE,
                                                                buttons = c('csv', 'excel')))
   

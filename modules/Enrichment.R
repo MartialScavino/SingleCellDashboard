@@ -19,7 +19,7 @@ enrichmentmainpanel <- mainPanel(tabsetPanel(
 
 
 enrichmentserver <- function(input, output, session, val){
-  output$Enrichmentdt <- renderDataTable(val$enrichment, extensions = 'Buttons', 
+  output$Enrichmentdt <- renderDataTable(val$enrichment, extensions = 'Buttons', server = F, 
                                          options = list(dom = 'Bfrtip', fixedColumns = TRUE, scrollX = TRUE,
                                                         buttons = c("copy", 'csv', 'excel')))
   

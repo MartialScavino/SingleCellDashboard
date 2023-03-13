@@ -53,7 +53,7 @@ allmarkersserver <- function(input, output, session, val){
     Idents(val$data) <- input$identallmarkers
     val$markers <- FindAllMarkers(val$data, logfc.threshold = input$LogFCThreshold,
                                   min.pct = input$MinimumPercent, test.use = input$TestToUse,
-                                  only.pos = input$OnlyPos)
+                                  only.pos = input$OnlyPos, assay = "RNA")
     
     val$markers <- val$markers[which(val$markers$p_val_adj < input$PValueThreshold),]
     
@@ -63,7 +63,7 @@ allmarkersserver <- function(input, output, session, val){
   })
   
   
-  output$AllMarkersDataTable <- renderDataTable(val$markers, extensions = 'Buttons', 
+  output$AllMarkersDataTable <- renderDataTable(val$markers, extensions = 'Buttons', server = F,
                                                                   options = list(dom = 'Bfrtip', fixedColumns = TRUE,
                                                                                  buttons = c('copy', 'csv', 'excel')))
   
@@ -79,8 +79,8 @@ allmarkersserver <- function(input, output, session, val){
     
     DoHeatmap(val$data, features = top10$gene, 
               group.colors = as.vector(unlist(val$colors[input$identallmarkers])),
-              group.by = input$identallmarkers)
-  }, height = 500)
+              group.by = input$identallmarkers, )
+  }, height = 800)
   
   
   
@@ -94,7 +94,7 @@ allmarkersserver <- function(input, output, session, val){
       arrange(factor(cluster, levels = levels(val$data@meta.data[,input$identallmarkers])))
     
     DotPlot(val$data, features = unique(top10$gene), group.by = input$identallmarkers) +
-       theme(axis.text.x = element_text(angle = 60, size = 8, vjust = 0.85))
+       theme(axis.text.x = element_text(angle = 60, size = 6, vjust = 0.85))
     
   })
   
@@ -119,8 +119,8 @@ allmarkersserver <- function(input, output, session, val){
       ggplot(subdf, aes(x = avg_log2FC, y = -log10(p_val_adj))) +
         geom_point(data = subdf_up, color = "red") + 
         geom_point(data = subdf_down, color = "blue") + 
-        geom_text(data = top10up, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene), nudge_y = 5) +
-        geom_text(data = top10down, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene), nudge_y = 5) + theme_light()
+        geom_text(data = top10up, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene), nudge_y = 2) +
+        geom_text(data = top10down, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene), nudge_y = 2) + theme_light()
       
     )
     
@@ -133,7 +133,7 @@ allmarkersserver <- function(input, output, session, val){
       val$markers <- readxl::read_xlsx(input$importtablemarkers$datapath, col_names = T)
     
     else if (file_ext(input$importtablemarkers$datapath) == "csv")
-      val$markers <- read.csv(input$importtablemarkers$datapath, header = T, sep = ',', row.names = 1)
+      val$markers <- read.csv(input$importtablemarkers$datapath, header = T, sep = ',')
     
     else{
       alert("Please enter a csv or a xlsx file")

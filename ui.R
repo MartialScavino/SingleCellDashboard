@@ -122,7 +122,12 @@ pca <- tabItem(tabName = "pca",
               tabPanel("DimHeatmap",
             sliderInput("ndimheatmap", "Number of dimension to plot",
                         1, 50, 1, 1),
-            plotOutput("dimheatmap"))
+            plotOutput("dimheatmap")),
+            
+              tabPanel("PCA Features",
+                       uiOutput("selectpcafeatures"),
+                       box(verbatimTextOutput("textpcafeaturespos"), title = "Positive"),
+                       box(verbatimTextOutput("textpcafeaturesneg"), title = "Negative"))
             )
           )
         )
@@ -259,4 +264,3 @@ dashboardPage(
   sidebar = side,
   body = bod
 )
-

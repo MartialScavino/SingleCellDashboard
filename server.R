@@ -4,7 +4,8 @@ server <- function(input, output, session) {
   val <- reactiveValues(colors = list(), 
                         markers = data.frame(list()),
                         degs = data.frame(),
-                        enrichment = data.frame())
+                        enrichment = data.frame(),
+                        plot = character(0))
   
   # Loading dataset
   observeEvent(input$data,{
@@ -17,13 +18,19 @@ server <- function(input, output, session) {
     df <- readRDS(input$data$datapath)
 
     if (!("percent.mt" %in% names(df@meta.data))){
+      if (length(grep( "^mt-", rownames(df), value = T) > 0))
+      df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^mt-")
+      
+      else if (length(grep( "^MT-", rownames(df), value = T) > 0))
       df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^MT-")
     }  
+    
+    
     
     val$data <- df
     
     # Show Metadata
-    output$dataset <- renderDataTable(val$data@meta.data, extensions = 'Buttons', 
+    output$dataset <- renderDataTable(val$data@meta.data, extensions = 'Buttons', server = F, 
                                       options = list(dom = 'Bfrtip', fixedColumns = TRUE,
                                                      buttons = c('copy', 'csv', 'excel')))
     })
@@ -159,9 +166,28 @@ server <- function(input, output, session) {
     if (!("pca" %in% names(val$data@reductions)))
       return(0)
     
-    DimHeatmap(val$data, dims =  input$ndimheatmap, balanced = TRUE, nfeatures = 20)
+    DimHeatmap(val$data, dims =  input$ndimheatmap, balanced = TRUE)
     })
   
+  
+  output$selectpcafeatures <- renderUI(
+    selectInput("pcafeatures", "PC to show", choices = 1:length(val$data@reductions$pca)))
+  
+  output$textpcafeaturespos <- renderText({
+    
+    gene_list <- TopFeatures(object = test[["pca"]], dim = as.integer(input$pcafeatures), nfeatures = 20, balanced = T)
+    
+    return(paste0(gene_list$positive, collapse = "\n"))
+    
+    })
+  
+  output$textpcafeaturesneg <- renderText({
+    
+    gene_list <- TopFeatures(object = test[["pca"]], dim = as.integer(input$pcafeatures), nfeatures = 20, balanced = T)
+    
+    return(paste0(gene_list$negative, collapse = "\n"))
+    
+  })
   
   
   ## UMAP
@@ -271,3 +297,4 @@ server <- function(input, output, session) {
   visualisationserver(input, output, session, val)
    
 }
+

@@ -1,5 +1,5 @@
-options(shiny.maxRequestSize = 100*2048^2)
-
+options(shiny.maxRequestSize = 500*2048^2)
+set.seed(123)
 Animation <- tags$head(tags$style(type="text/css", '
             .loading {
                 display: inline-block;
