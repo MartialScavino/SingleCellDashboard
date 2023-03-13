@@ -69,6 +69,8 @@ server <- function(input, output, session) {
   qcserver(input, output, session, val)
   
   
+  output$selectassayPreprocessing <- renderUI(selectInput("assayPreprocessing", "Assay to use", names(val$data@assays)))
+  
   # Preprocessing
   observeEvent(input$LaunchPreprocessing, {
     
@@ -100,10 +102,10 @@ server <- function(input, output, session) {
     
     if (input$regressing)
       val$data <- ScaleData(val$data, features = as.vector(unlist(dict[input$FeatureScale])), 
-                            vars.to.regress = c("S.Score", "G2M.Score"))
+                            vars.to.regress = c("S.Score", "G2M.Score"), assay = input$assayPreprocessing)
 
     else
-      val$data <- ScaleData(val$data, features = as.vector(unlist(dict[input$FeatureScale])))
+      val$data <- ScaleData(val$data, features = as.vector(unlist(dict[input$FeatureScale])), assay = input$assayPreprocessing)
     
     
     enable("LaunchPreprocessing")
@@ -129,6 +131,9 @@ server <- function(input, output, session) {
   output$groupbypca <- renderUI(selectInput("groupbypca", "group cells by",
                                          choices = names(val$data@meta.data)))
   
+  output$selectassayPCA <- renderUI(selectInput("assayPCA", "Assay to use", names(val$data@assays)))
+  
+  
   observeEvent(input$dopca, {
     
     addClass(id = "UpdateAnimatePCA", class = "loading dots")
@@ -136,7 +141,7 @@ server <- function(input, output, session) {
     
     dict <- list("All genes" = rownames(val$data), "Variable genes" = VariableFeatures(val$data))
     
-    val$data <- RunPCA(val$data, features = as.vector(unlist(dict[input$featurePCA])))
+    val$data <- RunPCA(val$data, features = as.vector(unlist(dict[input$featurePCA])), assay = input$assayPCA)
     
     enable("dopca")
     removeClass(id = "UpdateAnimatePCA", class = "loading dots")
@@ -194,12 +199,14 @@ server <- function(input, output, session) {
   output$groupbyumap <- renderUI(selectInput("groupbyumap", "group cells by",
                                              choices = names(val$data@meta.data)))
   
+  output$selectassayUMAP <- renderUI(selectInput("assayUMAP", "Assay to use", names(val$data@assays)))
+  
   observeEvent(input$doumap,{
     
     addClass(id = "UpdateAnimateUMAP", class = "loading dots")
     disable("doumap")
       
-               val$data <- RunUMAP(val$data, dims = 1:input$ndimumap)
+               val$data <- RunUMAP(val$data, dims = 1:input$ndimumap, assay = input$assayUMAP)
                
     enable("doumap")
     removeClass(id = "UpdateAnimateUMAP", class = "loading dots")
@@ -224,6 +231,8 @@ server <- function(input, output, session) {
                                              choices = names(val$data@meta.data),
                                              selected = "seurat_clusters"))
   
+  output$selectassayCluster <- renderUI(selectInput("assayCluster", "Assay to use", names(val$data@assays)))
+  
   output$sliderndimclusters <- renderUI(isolate(
     sliderInput("ndimscluster", "Number of dimension", 
                 min = 1, 
@@ -236,9 +245,11 @@ server <- function(input, output, session) {
     addClass(id = "UpdateAnimateCluster", class = "loading dots")
     disable("docluster")
     
+    DefaultAssay(val$data) <- input$assayCluster
     val$data <- FindNeighbors(val$data, k.param = input$kparam, dims = 1:input$ndimscluster)
     val$data <- FindClusters(val$data, resolution = input$resolution, algorithm = as.integer(input$algocluster))
     
+    DefaultAssay(val$data) <- "RNA"
     enable("docluster")
     removeClass(id = "UpdateAnimateCluster", class = "loading dots")
   })
@@ -297,4 +308,3 @@ server <- function(input, output, session) {
   visualisationserver(input, output, session, val)
    
 }
-

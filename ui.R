@@ -86,6 +86,7 @@ preprocess <- tabItem(tabName = "preprocessing",
                                        value = 2000, 
                                        min = 1000, max = 10000, step = 500),
                           hr(),
+                          uiOutput("selectassayPreprocessing"),
                           selectInput("FeatureScale", "Set of genes to use for scaling",
                                       choices = c("Variable genes", "All genes")),
                           checkboxInput("regressing", "Regress cell cycle"),
@@ -103,6 +104,7 @@ preprocess <- tabItem(tabName = "preprocessing",
 pca <- tabItem(tabName = "pca",
         sidebarLayout(
           sidebarPanel = sidebarPanel(
+            uiOutput("selectassayPCA"),
             selectInput("featurePCA", "Genes to use",
                         choices = c("Variable genes", "All genes"),
                         selected = "Variable genes"),
@@ -136,6 +138,7 @@ pca <- tabItem(tabName = "pca",
 umap <- tabItem(tabName = "umap", 
                 sidebarLayout(
                   sidebarPanel = sidebarPanel(
+                    uiOutput("selectassayUMAP"),
                     numericInput("ndimumap", "Number of dimension",
                                  30, 1, 200),
                     actionButton("doumap", span("Compute UMAP", id = "UpdateAnimateUMAP", class=""), styleclass = "primary")
@@ -151,6 +154,7 @@ umap <- tabItem(tabName = "umap",
 clustering <- tabItem(tabName = "clustering",
                       sidebarLayout(
                         sidebarPanel = sidebarPanel(
+                          uiOutput("selectassayCluster"),
                           numericInput("kparam", "k parameter", 
                                        20, 1, 100),
                           uiOutput("sliderndimclusters"),
