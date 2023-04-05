@@ -1,16 +1,3 @@
-# Options done in modules/Options.R
-## Set the max size to import data
-## Describe the spinner when clicking on a button
-
-# Sourcing modules
-source("modules/Options.R")
-source("modules/FeaturePlot.R")
-source("modules/QC.R")
-source("modules/AllMarkers.R")
-source("modules/DifferentialExpression.R")
-source("modules/Enrichment.R")
-source("modules/Visualisation.R")
-
 head <- dashboardHeader(title = "Single cell analysis", tags$li(class = "dropdown", 
                                                                 downloadButton("savedata", span("Save data", id = "UpdateAnimateSave", class = ""))))
 
@@ -46,7 +33,11 @@ load_data <- tabItem(tabName = "load_data",
                            fileInput(inputId = "featuresfile", "features.tsv.gz"),
                            fileInput(inputId = "matrixfile", "matrix.mtx.gz"),
                            actionButton("filtered", span("Load Data", id = "UpdateAnimateLoad", class = ""), styleclass = "primary"))),
-                     fluidRow(dataTableOutput("dataset"))
+                     fluidRow(
+                       box(title = "Metadata", width = 12,
+                         dataTableOutput("dataset")
+                         )
+                       )
 )
  
 ## Done in modules/QC.R
@@ -86,7 +77,7 @@ preprocess <- tabItem(tabName = "preprocessing",
                                        value = 2000, 
                                        min = 1000, max = 10000, step = 500),
                           hr(),
-                          uiOutput("selectassayPreprocessing"),
+                          # uiOutput("selectassayPreprocessing"),
                           selectInput("FeatureScale", "Set of genes to use for scaling",
                                       choices = c("Variable genes", "All genes")),
                           checkboxInput("regressing", "Regress cell cycle"),

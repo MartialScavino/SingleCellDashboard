@@ -38,6 +38,9 @@ output$typeaheadFeature <- renderUI({
 })
 
 output$selectsinglegene <- renderUI({
+  if (is.null(val$data))
+    return("")
+  
   keep <- c()
   for (i in names(val$data@meta.data)){
     if (length(table(val$data@meta.data[,i])) < 50)
@@ -56,13 +59,16 @@ output$featureplotsinglegene <- renderPlot({
 
 output$violinsinglegene <- renderPlot({
   if (input$gene != "")
-    VlnPlot(val$data, features = input$gene, group.by = input$choice_singlegene) + 
+    VlnPlot(val$data, features = input$gene, group.by = input$choice_singlegene, assay = "RNA") + 
     scale_fill_manual(values = val$colors[[input$choice_singlegene]]) + 
     theme_light()
 })
 
 ## SIGNATURE
 output$selectsignature <- renderUI({
+  if (is.null(val$data))
+    return("")
+  
   keep <- c()
   for (i in names(val$data@meta.data)){
     if (length(table(val$data@meta.data[,i])) < 50)
@@ -112,7 +118,7 @@ observeEvent(input$dosignatureplot,{
     p <- FeaturePlot(object = val$data, features = "Signature_UCell") + ggtitle("Signature")
     
     output$violinsignature <- renderPlot({
-      VlnPlot(val$data, features = "Signature_UCell", group.by = input$choice_signature) + 
+      VlnPlot(val$data, features = "Signature_UCell", group.by = input$choice_signature, assay = "RNA") + 
         scale_fill_manual(values = val$colors[[input$choice_signature]]) + 
         theme_light() + ggtitle(title)
     })
@@ -126,7 +132,7 @@ observeEvent(input$dosignatureplot,{
     p <- FeaturePlot(val$data, features = paste0("Signature_", name, "_UCell")) + ggtitle(input$signaturename)
     
     output$violinsignature <- renderPlot({
-      VlnPlot(val$data, features = paste0("Signature_", name, "_UCell"), group.by = input$choice_signature) + 
+      VlnPlot(val$data, features = paste0("Signature_", name, "_UCell"), group.by = input$choice_signature, assay = "RNA") + 
         scale_fill_manual(values = val$colors[[input$choice_signature]]) + 
         theme_light() + ggtitle(title)
     })

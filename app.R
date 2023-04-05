@@ -4,6 +4,7 @@ if (!require("rstudioapi")) install.packages("rstudioapi")
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 # Install packages
-source("modules/Dependencies.R")
+source("R/Dependencies.R")
 
 runApp('.')
+

@@ -34,6 +34,7 @@ enrichmentserver <- function(input, output, session, val){
     addClass(id = "UpdateAnimateEnrichment", class = "loading dots")
     disable("doenrichment")
     
+    tryCatch({
     string <- input$listgeneenrichment
     string <- sub(" ", "", string)
     liste_gene_enrich <- strsplit(string, "\n")[[1]]
@@ -49,17 +50,32 @@ enrichmentserver <- function(input, output, session, val){
     
     val$enrichment <- val$enrichment %>% arrange(desc(Combined.Score))
     
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      enable("doenrichment")
+      removeClass(id = "UpdateAnimateEnrichment", class = "loading dots")
+      return(0)
+      
+    })
     enable("doenrichment")
     removeClass(id = "UpdateAnimateEnrichment", class = "loading dots")
     
   })
   
   
-  output$sliderinputenrichment <- renderUI(
-    sliderInput("termtoplot", "Number of term to plot", 1, length(val$enrichment$Term), value = 30, step = 1)
-  )
+  output$sliderinputenrichment <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    sliderInput("termtoplot", "Number of term to plot", 
+                1, length(val$enrichment$Term), value = 30, step = 1)
+  })
   
   output$Dotplot <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     term_order <- val$enrichment$Term[order(val$enrichment$Combined.Score)]
     val$enrichment$Term <- factor(val$enrichment$Term, levels = term_order)
     

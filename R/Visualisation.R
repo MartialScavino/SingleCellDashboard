@@ -17,6 +17,9 @@ visualisationmainpanel <- mainPanel(
 
 visualisationserver <- function(input, output, session, val){
   output$visualisation_listoption <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     notkeep <- c()
     for (i in names(val$data@meta.data)){
@@ -56,6 +59,8 @@ visualisationserver <- function(input, output, session, val){
   
   
   output$PlotVisualisation <- renderPlot({
+    if (is.null(val$data))
+      return(0)
     
     switch(input$plottype,
            

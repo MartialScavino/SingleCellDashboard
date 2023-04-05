@@ -37,6 +37,9 @@ volcano <- tabPanel("Volcano plot",
 allmarkersserver <- function(input, output, session, val){
   
   output$SelectIdentAllMarkers <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -51,11 +54,22 @@ allmarkersserver <- function(input, output, session, val){
     disable("dofindallmarkers")
     
     Idents(val$data) <- input$identallmarkers
+    
+    tryCatch({
     val$markers <- FindAllMarkers(val$data, logfc.threshold = input$LogFCThreshold,
                                   min.pct = input$MinimumPercent, test.use = input$TestToUse,
                                   only.pos = input$OnlyPos, assay = "RNA")
     
     val$markers <- val$markers[which(val$markers$p_val_adj < input$PValueThreshold),]
+    
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      enable("dofindallmarkers")
+      removeClass(id = "UpdateAnimateAllMarkers", class = "loading dots")
+      return(0)
+      
+    })
     
     enable("dofindallmarkers")
     removeClass(id = "UpdateAnimateAllMarkers", class = "loading dots")
@@ -65,10 +79,12 @@ allmarkersserver <- function(input, output, session, val){
   
   output$AllMarkersDataTable <- renderDataTable(val$markers, extensions = 'Buttons', server = F,
                                                                   options = list(dom = 'Bfrtip', fixedColumns = TRUE,
-                                                                                 buttons = c('copy', 'csv', 'excel')))
+                                                                                 buttons = c('copy', 'csv', 'excel'), scrollX = T))
   
   
   output$HeatmapAllMarkers <- renderPlot({
+    if (is.null(val$data))
+      return(0)
     
     top10 <- val$markers %>% 
       group_by(cluster) %>% 
@@ -85,6 +101,8 @@ allmarkersserver <- function(input, output, session, val){
   
   
   output$DotplotAllMarkers <- renderPlot({
+    if (is.null(val$data))
+      return(0)
     
     top10 <- val$markers %>% 
       group_by(cluster) %>% 
@@ -99,12 +117,17 @@ allmarkersserver <- function(input, output, session, val){
   })
   
   # Select Input pour le volcano plot
-  output$selectVolcanoPlotAllMarkers <- renderUI(
+  output$selectVolcanoPlotAllMarkers <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     selectInput("choiceVolcanoPlotAllMarkers", "Choose a variable",
                 choices = names(table(val$data@meta.data[,input$identallmarkers])))
-  )
+  })
   
   output$VolcanoPlotAllMarkers <- renderPlotly({
+    if (is.null(val$data))
+      return(ggplotly(ggplot() + theme_minimal()))
     
     subdf <- val$markers[which(val$markers$cluster == input$choiceVolcanoPlotAllMarkers),]
     subdf_up <- subdf[which(subdf$avg_log2FC > input$LogFCThreshold),]
@@ -129,6 +152,8 @@ allmarkersserver <- function(input, output, session, val){
   
   observeEvent(input$importtablemarkers, {
     
+    tryCatch({
+    
     if (file_ext(input$importtablemarkers$datapath) == "xlsx")
       val$markers <- readxl::read_xlsx(input$importtablemarkers$datapath, col_names = T)
     
@@ -139,6 +164,12 @@ allmarkersserver <- function(input, output, session, val){
       alert("Please enter a csv or a xlsx file")
       return(0)
     }
+    
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      return(0)
+    })
       
   })
   

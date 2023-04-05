@@ -1,7 +1,8 @@
 if (!require("pacman")) install.packages("pacman")
 
 packages <- c("shinydashboard", "shiny", "shinyWidgets", "shinyjs", "shinyFiles", "shinyBS", "Seurat",
-              "ggplot2", "viridis", "cowplot", "DT", "babelgene", "plotly", "stringr", "scales", "tidyverse", "enrichR", "rclipboard")
+              "ggplot2", "viridis", "cowplot", "DT", "babelgene", "plotly", "stringr", "scales", "tidyverse", "enrichR"
+              , "rclipboard")
 
 if (!require("shinysky")) devtools::install_github("AnalytixWare/ShinySky")
 
@@ -14,12 +15,17 @@ df <- installed.packages()
 if (!"UCell" %in% rownames(df))
   BiocManager::install("UCell", force = T, update = F)
 
+
+if (!"DESeq2" %in% rownames(df))
+  BiocManager::install("DESeq2", force = T, update = F)
+
 library(shinysky)
 library(dplyr)
 library(tools)
 library(UCell)
+library(DESeq2)
 
-poubelle <- sapply(c(packages, "UCell", "shinysky", "dplyr", "tools"), function(x){
+poubelle <- sapply(c(packages, "UCell", "shinysky", "dplyr", "tools", "DESeq2"), function(x){
   
   if (!x %in% rownames(df)){
     

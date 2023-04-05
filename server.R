@@ -15,24 +15,31 @@ server <- function(input, output, session) {
       return(0)
     }
     
+    tryCatch({
     df <- readRDS(input$data$datapath)
-
+    
     if (!("percent.mt" %in% names(df@meta.data))){
+      
       if (length(grep( "^mt-", rownames(df), value = T) > 0))
-      df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^mt-")
+        df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^mt-")
       
       else if (length(grep( "^MT-", rownames(df), value = T) > 0))
-      df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^MT-")
+        df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^MT-")
     }  
-    
-    
     
     val$data <- df
     
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      return(0)
+    }) 
+    
     # Show Metadata
-    output$dataset <- renderDataTable(val$data@meta.data, extensions = 'Buttons', server = F, 
-                                      options = list(dom = 'Bfrtip', fixedColumns = TRUE,
-                                                     buttons = c('copy', 'csv', 'excel')))
+    output$dataset <- renderDataTable(val$data@meta.data, 
+                                      options = list(dom = 'Bfrtip', 
+                                                     fixedColumns = TRUE, 
+                                                     scrollX = T))
     })
  
   # Load data with 10X files
@@ -41,6 +48,8 @@ server <- function(input, output, session) {
     addClass(id = "UpdateAnimateLoad", class = "loading dots")
     disable("filtered")
 
+    tryCatch({
+      
     counts <- ReadMtx(input$matrixfile$datapath,
             cells = input$barcodesfile$datapath,
             features = input$featuresfile$datapath,
@@ -52,11 +61,20 @@ server <- function(input, output, session) {
       df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^MT-")
 
     val$data <- df
+    
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      enable("filtered")
+      removeClass(id = "UpdateAnimateLoad", class = "loading dots")
+      return(0)
+    })
 
     # Show Metadata
-    output$dataset <- renderDataTable(val$data@meta.data, extensions = 'Buttons',
-                                      options = list(dom = 'Bfrtip', fixedColumns = TRUE,
-                                                     buttons = c('copy', 'csv', 'excel')))
+    output$dataset <- renderDataTable(val$data@meta.data, 
+                                      options = list(dom = 'frtip', 
+                                                     fixedColumns = TRUE, 
+                                                     scrollX = T))
 
     enable("filtered")
     removeClass(id = "UpdateAnimateLoad", class = "loading dots")
@@ -76,11 +94,13 @@ server <- function(input, output, session) {
     
     addClass(id = "UpdateAnimatePreprocessing", class = "loading dots")
     disable("LaunchPreprocessing")
+  
+  tryCatch({
     
     val$data <- NormalizeData(val$data, normalization.method = input$NormMethod, 
-                              scale.factor = input$ScaleFactor)
+                              scale.factor = input$ScaleFactor, assay = "RNA")
     val$data <- FindVariableFeatures(val$data, selection.method = input$VariableMethod,
-                                     nfeatures = input$nfeatures)
+                                     nfeatures = input$nfeatures, assay = "RNA")
     
     s.genes <- cc.genes$s.genes
     g2m.genes <- cc.genes$g2m.genes
@@ -102,11 +122,17 @@ server <- function(input, output, session) {
     
     if (input$regressing)
       val$data <- ScaleData(val$data, features = as.vector(unlist(dict[input$FeatureScale])), 
-                            vars.to.regress = c("S.Score", "G2M.Score"), assay = input$assayPreprocessing)
+                            vars.to.regress = c("S.Score", "G2M.Score"), assay = "RNA")
 
     else
-      val$data <- ScaleData(val$data, features = as.vector(unlist(dict[input$FeatureScale])), assay = input$assayPreprocessing)
-    
+      val$data <- ScaleData(val$data, features = as.vector(unlist(dict[input$FeatureScale])), assay = "RNA")
+  }, error = function(e){
+    alert("There has been an error (printed in R console)")
+    print(e)
+    enable("LaunchPreprocessing")
+    removeClass(id = "UpdateAnimatePreprocessing", class = "loading dots")
+    return(0)
+  })
     
     enable("LaunchPreprocessing")
     removeClass(id = "UpdateAnimatePreprocessing", class = "loading dots")
@@ -115,33 +141,67 @@ server <- function(input, output, session) {
   
   
   output$variablefeatureplot <- renderPlot({
+    if (is.null(val$data))
+      return(0)
     
     if (length(VariableFeatures(val$data)) == 0)
       return(0)
     
     top20 <- head(VariableFeatures(val$data), 20)
-    p1 <- VariableFeaturePlot(val$data)
+    tryCatch({
+    p1 <- VariableFeaturePlot(val$data, assay = "RNA")
     LabelPoints(plot = p1, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
+    }, error = function(e){
+      
+      if ("integrated" %in% names(val$data@assays))
+        return(ggplot() + 
+               ggtitle("Variable feature analysis already performed on integrated assay (can't show plot)") + 
+               theme_minimal())
+      else{
+        alert("There has been an error (printed in R console)")
+        print(e)
+        return(0)
+      }
+    })
     
     })
   
   
   # Dimension reduction
   ## PCA
-  output$groupbypca <- renderUI(selectInput("groupbypca", "group cells by",
-                                         choices = names(val$data@meta.data)))
+  output$groupbypca <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("groupbypca", "group cells by",
+                choices = names(val$data@meta.data))
+    })
   
-  output$selectassayPCA <- renderUI(selectInput("assayPCA", "Assay to use", names(val$data@assays)))
+  output$selectassayPCA <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("assayPCA", "Assay to use", 
+                names(val$data@assays))
+    })
   
   
   observeEvent(input$dopca, {
     
     addClass(id = "UpdateAnimatePCA", class = "loading dots")
     disable("dopca")
-    
     dict <- list("All genes" = rownames(val$data), "Variable genes" = VariableFeatures(val$data))
     
-    val$data <- RunPCA(val$data, features = as.vector(unlist(dict[input$featurePCA])), assay = input$assayPCA)
+    tryCatch({
+      val$data <- RunPCA(val$data, features = as.vector(unlist(dict[input$featurePCA])), assay = input$assayPCA)
+      
+      }, error = function(e){
+        alert("There has been an error (printed in R console)")
+        print(e)
+        enable("dopca")
+        removeClass(id = "UpdateAnimatePCA", class = "loading dots")
+        return(0)
+      })
     
     enable("dopca")
     removeClass(id = "UpdateAnimatePCA", class = "loading dots")
@@ -150,6 +210,9 @@ server <- function(input, output, session) {
   
   
   output$PCA <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     if (!("pca" %in% names(val$data@reductions)))
       return(0)
     
@@ -162,12 +225,18 @@ server <- function(input, output, session) {
     })
   
   output$elbow <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     if (!("pca" %in% names(val$data@reductions)))
       return(0)
     ElbowPlot(val$data, ndims = input$ndimElbow)
     })
   
   output$dimheatmap <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     if (!("pca" %in% names(val$data@reductions)))
       return(0)
     
@@ -175,20 +244,29 @@ server <- function(input, output, session) {
     })
   
   
-  output$selectpcafeatures <- renderUI(
-    selectInput("pcafeatures", "PC to show", choices = 1:length(val$data@reductions$pca)))
+  output$selectpcafeatures <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("pcafeatures", "PC to show", 
+                choices = 1:length(val$data@reductions$pca))
+    })
   
   output$textpcafeaturespos <- renderText({
+    if (is.null(val$data))
+      return("")
     
-    gene_list <- TopFeatures(object = test[["pca"]], dim = as.integer(input$pcafeatures), nfeatures = 20, balanced = T)
+    gene_list <- TopFeatures(object = val$data[["pca"]], dim = as.integer(input$pcafeatures), nfeatures = 20, balanced = T)
     
     return(paste0(gene_list$positive, collapse = "\n"))
     
     })
   
   output$textpcafeaturesneg <- renderText({
+    if (is.null(val$data))
+      return("")
     
-    gene_list <- TopFeatures(object = test[["pca"]], dim = as.integer(input$pcafeatures), nfeatures = 20, balanced = T)
+    gene_list <- TopFeatures(object = val$data[["pca"]], dim = as.integer(input$pcafeatures), nfeatures = 20, balanced = T)
     
     return(paste0(gene_list$negative, collapse = "\n"))
     
@@ -196,23 +274,46 @@ server <- function(input, output, session) {
   
   
   ## UMAP
-  output$groupbyumap <- renderUI(selectInput("groupbyumap", "group cells by",
-                                             choices = names(val$data@meta.data)))
+  output$groupbyumap <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("groupbyumap", "group cells by",
+                choices = names(val$data@meta.data))
+    })
   
-  output$selectassayUMAP <- renderUI(selectInput("assayUMAP", "Assay to use", names(val$data@assays)))
+  output$selectassayUMAP <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("assayUMAP", "Assay to use", 
+                names(val$data@assays))
+    })
   
   observeEvent(input$doumap,{
     
     addClass(id = "UpdateAnimateUMAP", class = "loading dots")
     disable("doumap")
-      
-               val$data <- RunUMAP(val$data, dims = 1:input$ndimumap, assay = input$assayUMAP)
-               
+    
+    tryCatch({
+    val$data <- RunUMAP(val$data, dims = 1:input$ndimumap, assay = input$assayUMAP)
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      enable("doumap")
+      removeClass(id = "UpdateAnimateUMAP", class = "loading dots")
+      return(0)
+    }) 
     enable("doumap")
     removeClass(id = "UpdateAnimateUMAP", class = "loading dots")
-               })
+    })
+  
+  
   
   output$UMAP <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     if(!("umap" %in% names(val$data@reductions)))
       return(0)
     
@@ -227,27 +328,53 @@ server <- function(input, output, session) {
   
   
   ## Clustering
-  output$groupbycluster <- renderUI(selectInput("groupbycluster", "group cells by",
-                                             choices = names(val$data@meta.data),
-                                             selected = "seurat_clusters"))
+  output$groupbycluster <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("groupbycluster", "group cells by",
+                choices = names(val$data@meta.data),
+                selected = "seurat_clusters")
+    })
   
-  output$selectassayCluster <- renderUI(selectInput("assayCluster", "Assay to use", names(val$data@assays)))
+  output$selectassayCluster <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("assayCluster", "Assay to use", 
+                names(val$data@assays))
+    })
   
-  output$sliderndimclusters <- renderUI(isolate(
-    sliderInput("ndimscluster", "Number of dimension", 
+  output$sliderndimclusters <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    isolate(
+      sliderInput("ndimscluster", "Number of dimension", 
                 min = 1, 
                 max = length(val$data@reductions$pca), 
                 value = 30, 
                 step = 1)
-  ))
+  )})
   
   observeEvent(input$docluster, {
     addClass(id = "UpdateAnimateCluster", class = "loading dots")
     disable("docluster")
     
+    tryCatch({
+    
     DefaultAssay(val$data) <- input$assayCluster
     val$data <- FindNeighbors(val$data, k.param = input$kparam, dims = 1:input$ndimscluster)
     val$data <- FindClusters(val$data, resolution = input$resolution, algorithm = as.integer(input$algocluster))
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      DefaultAssay(val$data) <- "RNA"
+      enable("docluster")
+      removeClass(id = "UpdateAnimateCluster", class = "loading dots")
+      return(0)
+    })
+    
     
     DefaultAssay(val$data) <- "RNA"
     enable("docluster")
@@ -255,6 +382,9 @@ server <- function(input, output, session) {
   })
     
   output$UMAPCluster <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     if(length(table(val$data@meta.data[,input$groupbycluster])) > 50)
       FeaturePlot(val$data, reduction = "umap", features = input$groupbycluster) 
     

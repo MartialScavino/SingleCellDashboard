@@ -35,6 +35,9 @@ volcanodeg <- tabPanel("Volcano plot",
 degserver <- function(input, output, session, val){
   
   output$selectidentdeg <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -43,14 +46,26 @@ degserver <- function(input, output, session, val){
     selectInput("choiceidentdeg", "Select a variable", choices = keep, selected = input$choiceidentdeg)
   })
   
-  output$selectident1deg <- renderUI(selectInput("ident1deg", "First group to compare", 
-                                                 choices = names(table(val$data@meta.data[,input$choiceidentdeg])), 
-                                     selected = input$ident1deg))
-  output$selectident2deg <- renderUI(selectInput("ident2deg", "Second group to compare", 
-                                                 choices = c("All others", names(table(val$data@meta.data[,input$choiceidentdeg]))),
-                                                 selected = input$ident2deg))
+  output$selectident1deg <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("ident1deg", "First group to compare", 
+                choices = names(table(val$data@meta.data[,input$choiceidentdeg])), 
+                selected = input$ident1deg)
+    })
+  output$selectident2deg <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("ident2deg", "Second group to compare", 
+                choices = c("All others", names(table(val$data@meta.data[,input$choiceidentdeg]))),
+                selected = input$ident2deg)})
   
   output$selectgroupbyDE <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -60,8 +75,12 @@ degserver <- function(input, output, session, val){
   })
   
   output$selectsubsetident <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     if (input$choiceidentsubset != 'None')
-      selectInput("subsetident", "Choose the cells to keep", choices = names(table(val$data@meta.data[,input$choiceidentsubset])))
+      selectInput("subsetident", "Choose the cells to keep", 
+                  choices = names(table(val$data@meta.data[,input$choiceidentsubset])))
     
   })
   
@@ -71,6 +90,7 @@ degserver <- function(input, output, session, val){
     addClass(id = "UpdateAnimateDEG", class = "loading dots")
     disable("dofindDEG")
     
+    tryCatch({
     Idents(val$data) <- input$choiceidentdeg
     
     if (input$ident2deg == "All others"){
@@ -112,16 +132,27 @@ degserver <- function(input, output, session, val){
     val$degs <- val$degs[which(val$degs$p_val_adj < input$PValueThreshold),]
     val$degs[["gene"]] <- rownames(val$degs)
     
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      enable("dofindDEG")
+      removeClass(id = "UpdateAnimateDEG", class = "loading dots")
+      return(0)
+    })
+    
     enable("dofindDEG")
     removeClass(id = "UpdateAnimateDEG", class = "loading dots")
     
   })
   
   output$DEGs <- renderDataTable(val$degs, extensions = 'Buttons', server = F,
-                                                options = list(dom = 'Bfrtip', fixedColumns = TRUE,
+                                                options = list(dom = 'Bfrtip', fixedColumns = TRUE, scrollX = TRUE,
                                                                buttons = c('csv', 'excel')))
   
   output$copygenes <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     if (length(val$degs) != 0)
       rclipButton("copybtm", "Copy all genes", 
                   paste(rownames(val$degs), collapse = "\n"), modal = T, styleclass = "primary", icon = icon("clipboard"))
@@ -130,6 +161,8 @@ degserver <- function(input, output, session, val){
   
   
   output$VolcanoDEGS <- renderPlotly({
+    if (is.null(val$data))
+      return(ggplotly(ggplot() + theme_minimal()))
     
     up <- val$degs[which(val$degs$avg_log2FC > input$LogFCThreshold),]
     down <- val$degs[which(val$degs$avg_log2FC < -input$LogFCThreshold),]

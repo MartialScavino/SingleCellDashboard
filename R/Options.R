@@ -1,4 +1,4 @@
-options(shiny.maxRequestSize = 500*2048^2)
+options(shiny.maxRequestSize = 30000 * 1024^2)
 set.seed(123)
 Animation <- tags$head(tags$style(type="text/css", '
             .loading {
@@ -95,6 +95,9 @@ changeorder <- tabPanel("Change order",
 optionsserver <- function(input, output, session, val){
   
   output$SelectLabelInf50 <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -108,6 +111,8 @@ optionsserver <- function(input, output, session, val){
   
   observeEvent(input$changeLabel, {
     output$listOldLabel <- renderUI({
+      if (is.null(val$data))
+        return("")
       
       tagList(
         lapply(1:length(table(val$data@meta.data[,input$changeLabel])), 
@@ -123,6 +128,8 @@ optionsserver <- function(input, output, session, val){
     })
     
     output$listNewLabel <- renderUI({
+      if (is.null(val$data))
+        return("")
       
       tagList(
         lapply(1:length(table(val$data@meta.data[,input$changeLabel])), 
@@ -175,10 +182,18 @@ optionsserver <- function(input, output, session, val){
   
   
   ## Remove column
-  output$colnames <- renderUI(selectInput("coltoremove", "Column to remove",
-                                          choices = colnames(val$data@meta.data)))
+  output$colnames <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
+    selectInput("coltoremove", "Column to remove",
+                choices = colnames(val$data@meta.data))
+    })
   
-  output$headmetadata <- renderDataTable(val$data@meta.data, options = list(pageLength = 10, width="100%", scrollX = TRUE))
+  output$headmetadata <- renderDataTable(
+    if (!(is.null(val$data)))
+      val$data@meta.data, 
+    options = list(pageLength = 10, width="100%", scrollX = TRUE))
   
   observeEvent(input$doremove, 
                val$data@meta.data <- val$data@meta.data[, -which(colnames(val$data@meta.data) == input$coltoremove)])
@@ -189,7 +204,8 @@ optionsserver <- function(input, output, session, val){
     
     sapply(colnames(val$data@meta.data), function(i){
       
-      if (length(names(table(val$data@meta.data[,i]))) < 50){
+      if (length(names(table(val$data@meta.data[,i]))) < 50 & 
+          length(names(table(val$data@meta.data[,i]))) != 0){
         
         if (!(i %in% names(val$colors)))
           val$colors[[i]] <- hue_pal()(length(names(table(val$data@meta.data[,i]))))
@@ -206,6 +222,9 @@ optionsserver <- function(input, output, session, val){
   
   
   output$SelectLabelInf50_2 <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -218,6 +237,8 @@ optionsserver <- function(input, output, session, val){
   
   observeEvent(input$selectchangecolor, {
     output$listLabel <- renderUI({
+      if (is.null(val$data))
+        return("")
       
       tagList(
         lapply(1:length(table(val$data@meta.data[,input$selectchangecolor])), 
@@ -234,6 +255,8 @@ optionsserver <- function(input, output, session, val){
     
     
     output$listColor <- renderUI({
+      if (is.null(val$data))
+        return("")
       
       tagList(
         lapply(1:length(table(val$data@meta.data[,input$selectchangecolor])), 
@@ -251,12 +274,22 @@ optionsserver <- function(input, output, session, val){
   })
   
   
-  observeEvent(input$resetcolors, 
-               val$colors[[input$selectchangecolor]] <- hue_pal()(length(names(table(val$data@meta.data[,input$selectchangecolor]))))
-  )
+  observeEvent(input$resetcolors,{
+    tryCatch({
+      
+      val$colors[[input$selectchangecolor]] <- hue_pal()(length(names(table(val$data@meta.data[,input$selectchangecolor]))))
+      },
+      error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      return(0)
+  } 
+  )})
   
   
   observeEvent(input$dochangecolors, {
+    
+    tryCatch({
     lapply(1:length(table(val$data@meta.data[, input$selectchangecolor])),
            function(i){
              id <- paste0('Label_', i)
@@ -264,10 +297,18 @@ optionsserver <- function(input, output, session, val){
              val$colors[[input$selectchangecolor]][i] <- input[[id]]
            }
     )
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      return(0)
+    })
   })
   
  
   output$SelectLabelInf50_3 <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -280,6 +321,10 @@ optionsserver <- function(input, output, session, val){
   
   observeEvent(input$selectchangeorder, {
     output$listLabelOrder <- renderUI({
+      if (is.null(val$data))
+        return("")
+      
+      tryCatch({
       
       tagList(
         lapply(1:length(table(val$data@meta.data[,input$selectchangeorder])), 
@@ -292,10 +337,17 @@ optionsserver <- function(input, output, session, val){
                  
                })
       )
+      }, error = function(e){
+        alert("There has been an error (printed in R console)")
+        print(e)
+        return(0)
+      })
     })
     
     
     output$listOrder <- renderUI({
+      if (is.null(val$data))
+        return("")
       
       tagList(
         lapply(1:length(table(val$data@meta.data[,input$selectchangeorder])), 
@@ -315,6 +367,8 @@ optionsserver <- function(input, output, session, val){
   ## Faire les 3 boutons 
   
   observeEvent(input$dochangeorder, {
+    
+    tryCatch({
     
     df <- data.frame(list(label = "", order = ""))
     df_colors <- data.frame(list(color = '', order = ''))
@@ -338,7 +392,11 @@ optionsserver <- function(input, output, session, val){
     
     if (all(val$colors[[input$selectchangeorder]] != hue_pal()(length(names(table(val$data@meta.data[, input$selectchangeorder]))))))
       val$colors[[input$selectchangeorder]] <- as.vector(df_colors$color)
-    
+    }, error = function(e){
+      alert("There has been an error (printed in R console)")
+      print(e)
+      return(0)
+    })
   })
   
   

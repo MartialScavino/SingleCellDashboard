@@ -34,16 +34,23 @@ stacked <- tabPanel("Stacked",
 qcserver <- function(input, output, session, val){
   
   
-  # Slider featre slide bar
-  output$sliderFeature <- renderUI(sliderInput("features",
-                                               "Number of features",
-                                               min = min(val$data$nFeature_RNA),
-                                               max = max(val$data$nFeature_RNA),
-                                               value = c(min(val$data$nFeature_RNA), max(val$data$nFeature_RNA)), 
-                                               step = 50))
+  # Slider feature slide bar
+  output$sliderFeature <- renderUI({
+    if (is.null(val$data))
+      return()
+    
+    sliderInput("features","Number of features",
+                min = min(val$data$nFeature_RNA),
+                max = max(val$data$nFeature_RNA),
+                value = c(min(val$data$nFeature_RNA), 
+                max(val$data$nFeature_RNA)), 
+                step = 50)
+    })
   
   # Number of cell removed text
   output$texte <- renderText({
+    if (is.null(val$data))
+      return()
     
     nb_cell_bad <- length(rownames(val$data@meta.data[which(val$data$percent.mt > input$mt | 
                                                               val$data$nFeature_RNA < input$features[1] | 
@@ -59,16 +66,26 @@ qcserver <- function(input, output, session, val){
     addClass(id = "UpdateAnimateTrim", class = "loading dots")
     disable("Trim")
     
+    
+    tryCatch({
     val$data <- subset(val$data,
                        subset = nFeature_RNA > input$features[1] & nFeature_RNA < input$features[2] & percent.mt < input$mt)
-    
+    }, error = function(e){
+      alert("there have been an error (printed in R console)")
+      print(e)
+      enable("Trim")
+      removeClass(id = "UpdateAnimateTrim", class = "loading dots")
+      return(0)
+      
+    })
     enable("Trim")
     removeClass(id = "UpdateAnimateTrim", class = "loading dots")
     
   })
   
   output$scatter_QC_MT <- renderPlot({
-    
+    if (is.null(val$data))
+      return(0)
     
     ggplot(val$data@meta.data, aes(nCount_RNA, percent.mt, color = nFeature_RNA)) +
       geom_point(data = val$data@meta.data[val$data$percent.mt > input$mt,], alpha = 0.2) + 
@@ -80,6 +97,8 @@ qcserver <- function(input, output, session, val){
   })
   
   output$scatter_QC_Feature <- renderPlot({
+    if (is.null(val$data))
+      return(0)
     
     ggplot(val$data@meta.data, aes(nCount_RNA, nFeature_RNA, color = percent.mt)) +
       geom_point(data = val$data@meta.data[val$data$nFeature_RNA < input$features[1],], alpha = 0.2) + 
@@ -92,6 +111,8 @@ qcserver <- function(input, output, session, val){
   
   
   output$hist_QC_MT <- renderPlot({
+    if (is.null(val$data))
+      return(0)
     
     ggplot(val$data@meta.data, aes(x = percent.mt)) + 
       geom_histogram(aes(y = after_stat(density)), bins = 200, fill = "#FEB078") + 
@@ -101,6 +122,8 @@ qcserver <- function(input, output, session, val){
   })
   
   output$hist_QC_Feature <- renderPlot({
+    if (is.null(val$data))
+      return(0)
     
     ggplot(val$data@meta.data, aes(x = nFeature_RNA)) + 
       geom_histogram(aes(y = after_stat(density)), bins = 200, fill = "#DDA0DD") + 
@@ -111,6 +134,9 @@ qcserver <- function(input, output, session, val){
   
   
   output$select_violin_QC <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -122,12 +148,18 @@ qcserver <- function(input, output, session, val){
   
   
   output$violin_QC_MT <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     VlnPlot(val$data, "nFeature_RNA", group.by = input$choice_violin_QC) + 
       geom_hline(yintercept = input$features, col = "#832681") + NoLegend() + 
       scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_violin_QC])))
   })
   
   output$violin_QC_Features <- renderPlot({
+    if (is.null(val$data))
+      return(0)
+    
     VlnPlot(val$data, "percent.mt", group.by = input$choice_violin_QC) + 
       geom_hline(yintercept = input$mt, col = '#FEB078') + NoLegend() + 
       scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_violin_QC])))
@@ -136,6 +168,9 @@ qcserver <- function(input, output, session, val){
   
   
   output$select_stacked_1 <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -147,6 +182,9 @@ qcserver <- function(input, output, session, val){
   
   
   output$select_stacked_2 <- renderUI({
+    if (is.null(val$data))
+      return("")
+    
     keep <- c()
     for (i in names(val$data@meta.data)){
       if (length(table(val$data@meta.data[,i])) < 50)
@@ -158,6 +196,8 @@ qcserver <- function(input, output, session, val){
   
   
   output$stacked_barplot <- renderPlotly({
+    if (is.null(val$data))
+      return(ggplotly(ggplot() + theme_minimal()))
     
     ggplotly(ggplot(val$data@meta.data, 
                     aes(fill=.data[[input$choice_stacked_y]], 
