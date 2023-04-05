@@ -7,4 +7,3 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 source("R/Dependencies.R")
 
 runApp('.')
-

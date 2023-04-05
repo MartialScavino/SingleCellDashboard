@@ -114,6 +114,8 @@ optionsserver <- function(input, output, session, val){
       if (is.null(val$data))
         return("")
       
+      tryCatch({
+      
       tagList(
         lapply(1:length(table(val$data@meta.data[,input$changeLabel])), 
                function(i){
@@ -125,6 +127,11 @@ optionsserver <- function(input, output, session, val){
                  
                })
       )
+      }, error = function(e){
+        alert("There has been an error (printed in R console)")
+        print(e)
+        return(0)
+      })
     })
     
     output$listNewLabel <- renderUI({

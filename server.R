@@ -57,8 +57,14 @@ server <- function(input, output, session) {
 
     df <- CreateSeuratObject(counts = counts)
 
-    if (!("percent.mt" %in% names(df@meta.data)))
-      df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^MT-")
+    if (!("percent.mt" %in% names(df@meta.data))){
+      
+      if (length(grep( "^mt-", rownames(df), value = T) > 0))
+        df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^mt-")
+      
+      else if (length(grep( "^MT-", rownames(df), value = T) > 0))
+        df[["percent.mt"]] <- PercentageFeatureSet(df, pattern = "^MT-")
+    }
 
     val$data <- df
     
@@ -153,9 +159,9 @@ server <- function(input, output, session) {
     LabelPoints(plot = p1, points = top20, repel = TRUE, xnudge = 0, ynudge = 0)
     }, error = function(e){
       
-      if ("integrated" %in% names(val$data@assays))
+      if (grepl("'FindVariableFeatures'", e) & "integrated" %in% names(val$data@assays))
         return(ggplot() + 
-               ggtitle("Variable feature analysis already performed on integrated assay (can't show plot)") + 
+               ggtitle("Can't show plot because the variable feature analysis was performed on the integrated assay") + 
                theme_minimal())
       else{
         alert("There has been an error (printed in R console)")
