@@ -36,11 +36,14 @@ server <- function(input, output, session) {
     }) 
     
     # Show Metadata
-    output$dataset <- renderDataTable(val$data@meta.data, 
-                                      options = list(dom = 'Bfrtip', 
-                                                     fixedColumns = TRUE, 
-                                                     scrollX = T))
-    })
+    output$dataset <- renderDataTable({
+      if (is.null(val$data))
+        return(data.table(list()))
+      
+      val$data@meta.data
+      } , options = list(dom = 'frtip', 
+                         fixedColumns = TRUE, 
+                         scrollX = T))})
  
   # Load data with 10X files
   observeEvent(input$filtered, {
@@ -77,10 +80,14 @@ server <- function(input, output, session) {
     })
 
     # Show Metadata
-    output$dataset <- renderDataTable(val$data@meta.data, 
-                                      options = list(dom = 'frtip', 
-                                                     fixedColumns = TRUE, 
-                                                     scrollX = T))
+    output$dataset <- renderDataTable({
+      if (is.null(val$data))
+        return(data.frame(list()))
+      
+      val$data@meta.data
+    } , options = list(dom = 'frtip', 
+                       fixedColumns = TRUE, 
+                       scrollX = T))
 
     enable("filtered")
     removeClass(id = "UpdateAnimateLoad", class = "loading dots")
