@@ -26,7 +26,7 @@ featureplotserver <- function(input, output, session, val){
   ## SINGLE GENE
 output$typeaheadFeature <- renderUI({
   
-  genes <- data.frame(list(gene = rownames(val$data)))
+  genes <- data.frame(list(gene = rownames(GetAssay(val$data, "RNA"))))
   
   textInput.typeahead("gene", placeholder = "Enter a gene",
                       local = genes, 
@@ -87,7 +87,7 @@ output$genenotpresent <- renderText({
   if (length(genes) == 0)
     return("")
   
-  genesnotpresent <- genes[which(!genes %in% rownames(val$data))]
+  genesnotpresent <- genes[which(!genes %in% rownames(GetAssay(val$data, "RNA")))]
   if (length(genesnotpresent) == 0)
     return("")
   
@@ -108,12 +108,15 @@ observeEvent(input$dosignatureplot,{
   addClass(id = "UpdateAnimateFeature", class = "loading dots")
   disable("dosignatureplot")
   
+  
+  tryCatch({
+    
   string <- input$signaturelist
   string <- sub(" ", "", string)
   liste_gene_plot <- strsplit(string, "\n")[[1]] 
   
   if (input$signaturename == ""){
-    val$data <- AddModuleScore_UCell(val$data, features = list(Signature = liste_gene_plot))
+    val$data <- AddModuleScore_UCell(val$data, features = list(Signature = liste_gene_plot), assay = "RNA")
     title <- "Signature"
     p <- FeaturePlot(object = val$data, features = "Signature_UCell") + ggtitle("Signature")
     
@@ -127,7 +130,7 @@ observeEvent(input$dosignatureplot,{
   
   else{
     name <- sub(" ", "", input$signaturename)
-    val$data <- AddModuleScore_UCell(val$data ,features = list(Signature_ = liste_gene_plot), name = paste0(name, "_UCell"))
+    val$data <- AddModuleScore_UCell(val$data ,features = list(Signature_ = liste_gene_plot), name = paste0(name, "_UCell"), assay = "RNA")
     title <- input$signaturename
     p <- FeaturePlot(val$data, features = paste0("Signature_", name, "_UCell")) + ggtitle(input$signaturename)
     
@@ -145,124 +148,14 @@ observeEvent(input$dosignatureplot,{
   enable("dosignatureplot")
   removeClass(id = "UpdateAnimateFeature", class = "loading dots")
   
+  }, error = function(e){
+    alert("There has been an error (printed in R console)")
+    print(e)
+    enable("dosignatureplot")
+    removeClass(id = "UpdateAnimateFeature", class = "loading dots")
+    return(0)
+  })
+  
 })
 
 }
-
-# featureplotsidebar <- sidebarPanel(
-#   p(markdown('---')),
-#   p("Signature genes"),
-#   p("(Click on a button to remove it)"),
-#   uiOutput("list_button"),
-#   p(markdown('---')),
-#   p(HTML("<br><br><br>")),
-#   actionButton('dofeature', span('Compute plot', id="UpdateAnimateFeature", class=""), styleclass = "primary"))
-# 
-# featureplotmain <-mainPanel(
-#   uiOutput("typeaheadFeature"),
-#   actionButton("reset", "Reset signature", styleclass = "danger"),
-#   plotOutput("featuresplot"))
-
-
-
-# liste = reactiveValues(df = data.frame(list(gene_name = character(0), show_button = character(0))))
-# 
-# # Ajoute un gène à la liste lorsqu'on écrit un nouveau gène
-# observeEvent(input$gene,{
-#   
-#   if (input$gene != "" & input$gene %in% liste$df$gene_name == FALSE){
-#     liste$df[nrow(liste$df) + 1,] <- c(input$gene, TRUE)
-#   }
-#   
-#   else if (input$gene != "" & input$gene %in% liste$df$gene_name == TRUE){
-#     if (liste$df[which(liste$df$gene_name == input$gene), "show_button"] == FALSE){
-#       
-#       liste$df[which(liste$df$gene_name == input$gene), "show_button"] <- TRUE
-#       
-#     }
-#   }
-# })
-# 
-# 
-# # Créer un bouton pour chaque élément dans la liste de gène signature
-# observeEvent(liste$df$gene_name, output$list_button <- renderUI({
-#   
-#   if (length(liste$df$gene_name) > 0){
-#     tagList(
-#       lapply(1:length(liste$df$gene_name), function(i){
-#         
-#         if (liste$df$show_button[i] == TRUE){
-#           
-#           id1 <- paste0('slider_',liste$df$gene_name[i])
-#           actionButton(id1, liste$df$gene_name[i], "info", 
-#                        onclick = "Shiny.onInputChange('myclick', {id : this.id, val : this})")
-#         }
-#       })
-#     )
-#   }
-#   
-#   else{
-#     
-#     output$list_button <- renderUI(actionButton('bla', "No gene selected", "inverse"))
-#     
-#   }
-# }))
-# 
-# 
-# # Reset list quand on appuie sur le bouton
-# observeEvent(input$reset, {
-#   
-#   liste$df <- data.frame(list(gene_name = character(0), show_button = character(0)))
-#   
-# })
-# 
-# # Make button removable when clicking on it
-# observeEvent(input$myclick, {
-#   
-#   id <- strsplit(input$myclick$id, "_")[[1]][2]
-#   liste$df[which(liste$df$gene_name == id), "show_button"] <- FALSE
-#   
-# })
-# 
-# 
-# 
-# # observeEvent(input$dofeature,{
-# #   output$featuresplot <- renderPlot({
-# #     
-# #     isolate({
-# #       
-# #       liste_gene_plot <- liste$df[which(liste$df$show_button == TRUE), "gene_name"]
-# #       
-# #       if (length(liste_gene_plot) == 1){
-# #         
-# #         p <- FeaturePlot(val$data, features = liste_gene_plot)
-# #         return(p)
-# #       }
-# #       
-# #       else if (length(liste_gene_plot) > 1){
-# #         
-# #         addClass(id = "UpdateAnimateFeature", class = "loading dots")
-# #         disable("dofeature")
-# #         
-# #         if (input$signaturename == ""){
-# #           val$data <- AddModuleScore_UCell(val$data, features = list(Signature = liste_gene_plot))
-# #           p <- FeaturePlot(object = val$data, features = "Signature_UCell") + ggtitle("Signature")
-# #         }
-# #         
-# #         else{
-# #           name <- sub(" ", "", input$signaturename)
-# #           val$data <- AddModuleScore_UCell(val$data ,features = list(Signature_ = liste_gene_plot), name = paste0(name, "_UCell"))
-# #           p <- FeaturePlot(val$data, features = paste0("Signature_", name, "_UCell")) + ggtitle(input$signaturename)
-# #         }
-# #         
-# #         enable("dofeature")
-# #         removeClass(id = "UpdateAnimateFeature", class = "loading dots")
-# #         return(p)
-# #         
-# #       }
-# #       
-# #       else { return() }
-# #       
-# #     })
-# #   })
-# # })
