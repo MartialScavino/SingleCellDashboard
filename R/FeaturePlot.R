@@ -25,6 +25,8 @@ featureplotserver <- function(input, output, session, val){
   
   ## SINGLE GENE
 output$typeaheadFeature <- renderUI({
+  if (is.null(val$data))
+    return()
   
   genes <- data.frame(list(gene = rownames(GetAssay(val$data, "RNA"))))
   
@@ -52,12 +54,18 @@ output$selectsinglegene <- renderUI({
 
 
 output$featureplotsinglegene <- renderPlot({
+  if (is.null(val$data))
+    return()
+  
   if (input$gene != "")
       FeaturePlot(val$data, features = input$gene)
 })
 
 
 output$violinsinglegene <- renderPlot({
+  if (is.null(val$data))
+    return()
+  
   if (input$gene != "")
     VlnPlot(val$data, features = input$gene, group.by = input$choice_singlegene, assay = "RNA") + 
     scale_fill_manual(values = val$colors[[input$choice_singlegene]]) + 
@@ -99,6 +107,8 @@ output$genenotpresent <- renderText({
 
 # Calcule le plot quand le bouton est sélectionné 
 observeEvent(input$dosignatureplot,{
+  if (is.null(val$data))
+    return()
   
   if (input$signaturelist == ""){
     alert("Please enter a list of gene")
