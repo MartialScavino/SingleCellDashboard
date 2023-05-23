@@ -105,7 +105,7 @@ PreprocessingServer <- function(input, output, session, val){
         val$data <- CellCycleScoring(val$data, s.features = s.genes_mus.musculus$symbol, g2m.features = g2m.genes_mus.musculus$symbol)
       
       
-      dict <- list("All genes" = rownames(val$data), "Variable genes" = VariableFeatures(val$data))
+      dict <- list("All genes" = rownames(GetAssay(val$data), "RNA"), "Variable genes" = VariableFeatures(val$data))
       
       if (input$regressing)
         val$data <- ScaleData(val$data, features = as.vector(unlist(dict[input$FeatureScale])), 
