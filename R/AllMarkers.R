@@ -1,12 +1,57 @@
 sidebarAllMarkers <- sidebarPanel(
   uiOutput("SelectIdentAllMarkers"),
+  HelpInput(text_placement = "right", trigger = "click", content = markdown("Denotes which test to use. Available options are:
+  
+  * wilcox : Identifies differentially expressed genes between two groups of cells
+  using a Wilcoxon Rank Sum test (default)
+  
+  * bimod : Likelihood-ratio test for single cell gene expression, 
+  (McDavid et al., Bioinformatics, 2013)
+  
+  * roc : Identifies 'markers' of gene expression using ROC analysis. 
+  For each gene, evaluates (using AUC) a classifier built on that gene alone, 
+  to classify between two groups of cells. An AUC value of 1 means that expression
+  values for this gene alone can perfectly classify the two groupings 
+  (i.e. Each of the cells in cells.1 exhibit a higher level than each of the cells in cells.2).
+  An AUC value of 0 also means there is perfect classification, but in the other direction.
+  A value of 0.5 implies that the gene has no predictive power to classify the two groups. 
+  Returns a 'predictive power' abs(AUC-0.5)*2 ranked matrix of putative differentially expressed genes.
+  
+  * t : Identify differentially expressed genes between two groups of cells 
+  using the Student's t-test.
+  
+  * negbinom : Identifies differentially expressed genes between two groups of cells 
+  using a negative binomial generalized linear model. Use only for UMI-based datasets
+  
+  * poisson : Identifies differentially expressed genes between two groups of cells 
+  using a poisson generalized linear model. Use only for UMI-based datasets
+  
+  * LR : Uses a logistic regression framework to determine differentially expressed genes. 
+  Constructs a logistic regression model predicting group membership based on each feature individually and 
+  compares this to a null model with a likelihood ratio test.
+  
+  * MAST : Identifies differentially expressed genes between two groups of cells 
+  using a hurdle model tailored to scRNA-seq data. Utilizes the MAST package to run the DE testing.
+  
+  * DESeq2 : Identifies differentially expressed genes between two groups of cells 
+                     based on a model using DESeq2 which uses a negative binomial distribution 
+                     (Love et al, Genome Biology, 2014).This test does not support pre-filtering of 
+                     genes based on average difference (or percent detection rate) between cell groups. 
+                     However, genes may be pre-filtered based on their minimum detection rate (min.pct) across 
+                     both cell groups. To use this method, please install DESeq2, using the instructions at 
+                     https://bioconductor.org/packages/release/bioc/html/DESeq2.html")),
   selectInput("TestToUse", "Test to use", 
               choices = c("Wilcoxon" = "wilcox", "Likelihood Ratio" = "bimod", "ROC" = "roc",
                           "T test" = "t", "Negative Binomial" = "negbinom",
                           "Poisson" = "poisson", "Logistic Regression" = "LR",
                           "MAST" = "MAST", "DESeq2" = "DESeq2")),
+  HelpInput("only test genes that are detected in a minimum fraction of min.pct cells in either of the two populations. 
+            Meant to speed up the function by not testing genes that are very infrequently expressed. Default is 0.1"),
   sliderInput("MinimumPercent", "Minimum percent expressed",
               0, 1, 0.1, 0.01),
+  HelpInput("Limit testing to genes which show, on average, at least X-fold difference (log-scale) 
+            between the two groups of cells. Default is 0.25 Increasing logfc.threshold speeds up the function, 
+            but can miss weaker signals."),
   sliderInput("LogFCThreshold", "LogFC threshold", 
               0, 3, 0.25, 0.05),
   sliderInput("PValueThreshold", "Adjusted p-value threshold",
@@ -15,9 +60,10 @@ sidebarAllMarkers <- sidebarPanel(
   actionButton("dofindallmarkers", span("Compute", id = "UpdateAnimateAllMarkers", class=""), styleclass = "primary"),
   hr(),
   p(markdown("**Import marker table**")),
+  HelpInput("Computing marker genes can take some time and could need a huge amount of resources. 
+            If you've already done this analysis, you can download the table with the csv button and reimport it with the following button."),
   fileInput("importtablemarkers", label = "Enter a .csv or a excel file", accept = ".csv")
 )
-
 
 
 markers <- tabPanel("Markers", 
@@ -53,9 +99,8 @@ allmarkersserver <- function(input, output, session, val){
     addClass(id = "UpdateAnimateAllMarkers", class = "loading dots")
     disable("dofindallmarkers")
     
-    Idents(val$data) <- input$identallmarkers
-    
     tryCatch({
+    Idents(val$data) <- input$identallmarkers
     val$markers <- FindAllMarkers(val$data, logfc.threshold = input$LogFCThreshold,
                                   min.pct = input$MinimumPercent, test.use = input$TestToUse,
                                   only.pos = input$OnlyPos, assay = "RNA")

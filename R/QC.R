@@ -1,10 +1,13 @@
 # QC panel
 sidebar_QC <- sidebarPanel(
+  HelpInput("Low-quality/dying cells often exhibit extensive mitochondiral contamination"),
   sliderInput("mt", "Mamimum percentage of mitochondrial genes",
               min = 0,
               max = 100,
               value = 20,
               step = 1),
+  HelpInput("Low quality cells or empty droplets will often have very few genes. 
+            Conversely, cell doublets or multiplets may exhibit an aberrantly high gene count"),
   uiOutput("sliderFeature"),
   textOutput("texte"),
   actionButton("Trim", span("Compute trimming", id="UpdateAnimateTrim", class=""), styleclass = "primary"))
@@ -30,6 +33,22 @@ stacked <- tabPanel("Stacked",
                       uiOutput("select_stacked_2")),
                     fluidRow(
                       plotlyOutput("stacked_barplot")))
+
+qc <- tabItem(tabName = "qc",
+              sidebarLayout(sidebarPanel = sidebar_QC, 
+                            mainPanel = mainPanel(
+                              tabsetPanel(
+                                scatter,
+                                hist,
+                                violin,
+                                stacked
+                              )
+                            )
+              )
+)
+
+
+
 
 qcserver <- function(input, output, session, val){
   
@@ -151,6 +170,9 @@ qcserver <- function(input, output, session, val){
     if (is.null(val$data))
       return(0)
     
+    if(is.null(input$choice_violin_QC))
+      return(0)
+    
     VlnPlot(val$data, "nFeature_RNA", group.by = input$choice_violin_QC) + 
       geom_hline(yintercept = input$features, col = "#832681") + NoLegend() + 
       scale_fill_manual(values = as.vector(unlist(val$colors[input$choice_violin_QC])))
@@ -158,6 +180,9 @@ qcserver <- function(input, output, session, val){
   
   output$violin_QC_Features <- renderPlot({
     if (is.null(val$data))
+      return(0)
+    
+    if(is.null(input$choice_violin_QC))
       return(0)
     
     VlnPlot(val$data, "percent.mt", group.by = input$choice_violin_QC) + 
@@ -197,6 +222,12 @@ qcserver <- function(input, output, session, val){
   
   output$stacked_barplot <- renderPlotly({
     if (is.null(val$data))
+      return(ggplotly(ggplot() + theme_minimal()))
+    
+    if (is.null(input$choice_stacked_y))
+      return(ggplotly(ggplot() + theme_minimal()))
+    
+    if (is.null(input$choice_stacked_x))
       return(ggplotly(ggplot() + theme_minimal()))
     
     ggplotly(ggplot(val$data@meta.data, 

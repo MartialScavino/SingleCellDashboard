@@ -40,3 +40,68 @@ poubelle <- sapply(c(packages, "UCell", "shinysky", "dplyr", "tools", "DESeq2"),
 rm(poubelle)
 rm(df)
 rm(packages)
+
+
+## Defining functions
+helpPopup <- function(title, content,
+                      placement=c('right', 'top', 'left', 'bottom'),
+                      trigger=c('click', 'hover', 'focus', 'manual'),
+                      width){
+  if (trigger == 'hover'){ 
+  
+  tagList(
+    singleton(
+      tags$head(
+        tags$script("$(function() { $(\"[data-toggle='popover']\").popover(); })"),
+        tags$style(type = "text/css",
+                   paste0(".popover{
+                                    max-width:",width,";
+                                  }"))
+      )
+    ),
+    tags$i(
+      href = "#", class = "fa-regular fa-circle-question", `data-toggle` = "popover",
+      title = title, `data-content` = content, `data-animation` = TRUE,
+      `data-placement` = match.arg(placement, several.ok=TRUE)[1],
+      `data-trigger` = match.arg(trigger, several.ok=TRUE)[1],
+      `data-html` = TRUE, `data-container` = "body"
+    )
+  )
+  }
+  
+  else{
+    tagList(
+      singleton(
+        tags$head(
+          tags$script("$(function() { $(\"[data-toggle='popover']\").popover(); })"),
+          tags$style(type = "text/css",
+                     paste0(".popover{
+                                    max-width:",width,";
+                                  }"))
+        )
+      ),
+      tags$a(
+        href = "#", class = "fa-regular fa-circle-question", `data-toggle` = "popover",
+        title = title, `data-content` = content, `data-animation` = TRUE,
+        `data-placement` = match.arg(placement, several.ok=TRUE)[1],
+        `data-trigger` = match.arg(trigger, several.ok=TRUE)[1],
+        `data-html` = TRUE, `data-container` = "body"
+      )
+    )
+    
+  }
+}
+
+HelpInput <- function(content, text_placement = "bottom", icon_placement = "right", trigger = "hover", width = "500px"){
+  
+  style <- paste0("text-align: ", icon_placement)
+  
+  return(tags$div(helpPopup(title = NULL, content = content, placement = text_placement, trigger = trigger, width = width),
+                  style= style))
+}
+
+
+
+
+
+

@@ -1,5 +1,6 @@
 options(shiny.maxRequestSize = 30000 * 1024^2)
 set.seed(123)
+
 Animation <- tags$head(tags$style(type="text/css", '
             .loading {
                 display: inline-block;
@@ -28,7 +29,7 @@ Animation <- tags$head(tags$style(type="text/css", '
                 white-space: pre;
                 text-align: left;
             }
-            @keyframes spin10 { to { transform: translateY(-15.0em); } }
+            @keyframes spin10 { to { transform: translateY(-15.0em); }}
             '))
 
 
