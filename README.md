@@ -13,4 +13,8 @@ For windows users, the installation of the Ucell package is likely to malfunctio
 If this is the case, please try launching this command before : `options(download.file.method = "wininet")`
 If it doesn't solve the issue, you can still launch the application with the `runApp('.')` command but the Signature tab will not work properly.
 
+# Data 
+
+If you want to try the application, you can use the `pbmc.rds` file in the rds folder of the repository.
+
 If you have any question or issue, please contact me at : martial.scavino@etu.univ-lyon1.fr
