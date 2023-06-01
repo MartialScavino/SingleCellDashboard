@@ -17,4 +17,6 @@ If it doesn't solve the issue, you can still launch the application with the `ru
 
 If you want to try the application, you can use the `pbmc.rds` file in the rds folder of the repository.
 
+# Further informations
+
 If you have any question or issue, please contact me at : martial.scavino@etu.univ-lyon1.fr
