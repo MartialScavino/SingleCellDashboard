@@ -391,9 +391,13 @@ optionsserver <- function(input, output, session, val){
       
     }
     
+                
+    df$order <- as.numeric(df$order)
     df <- df %>% arrange(order)
-    df_colors <- df_colors %>% arrange(order)
     
+    df_colors$order <- as.numeric(df_colors$order)
+    df_colors <- df_colors %>% arrange(order)
+                
     levels_test <- as.vector(df$label)
     
     val$data@meta.data[,input$selectchangeorder] <- factor(val$data@meta.data[,input$selectchangeorder], levels = levels_test)
