@@ -220,7 +220,7 @@ degserver <- function(input, output, session, val){
     top10down <- down %>% slice_max(n = 10, order_by = -avg_log2FC)
     
     ggplotly(
-      ggplot(val$degs, aes(x = avg_log2FC, y = -log10(p_val_adj))) +
+      ggplot(val$degs, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene)) +
         geom_point(data = up, color = "red") + 
         geom_point(data = down, color = "blue") + 
         geom_text(data = top10up, aes(x = avg_log2FC, y = -log10(p_val_adj), label = gene), nudge_y = 0.05) +
